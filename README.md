@@ -4,8 +4,19 @@ A set of example Python scripts for the compliance endpoints. Scripts for:
   1) Creating a Job.
   2) Checking on Job status and retrieving Job details.
   3) Uploading a text file with Tweet IDs (one per line).
-  4) Downloading results which consist of JSON results for each Tweet that has a Compliance results (e.g. has been deleted).
+  4) Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been deleted).
   
+  Here is an example:
+  
+  ```json
+  {
+	  "id": "906972198136631298",
+	  "action": "delete",
+	  "created_at": "2017-09-10T20:06:37.421Z",
+	  "redacted_at": "2020-07-21T23:37:55.607Z",
+	  "reason": "deleted"
+  }
+ ``` 
 Also, the start of a simple command-line app that references a compliance_client class.
 
 ```
