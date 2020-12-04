@@ -1,8 +1,9 @@
-# An incredible project
+# Compliant-client
 
-This is the file you get to write to document your new project!
-
-Also, don't forget to edit the couple of references in CONTRIBUTING.md that will need to be customized to link to this repo.
-Update the LICENSE file with the correct date and attribution.
-
-You also might want to create a .gitignore file to make things nicer.
+A set of examples Python scripts for the compliance endpoints. Scripts for:
+  1) Creating a Job 
+  2) Checking on Job status and retrieving Job details.
+  3) Uploading a text file with Tweet IDs (one per line).
+  4) Downloading results which consist of JSON results for each Tweet that has a Compliance results (e.g. has been deleted).
+  
+  
