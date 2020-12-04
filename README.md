@@ -1,11 +1,10 @@
 # The Compliant (python) client
 
-A set of examples Python scripts for the compliance endpoints. Scripts for:
-  1) Creating a Job 
+A set of example Python scripts for the compliance endpoints. Scripts for:
+  1) Creating a Job.
   2) Checking on Job status and retrieving Job details.
   3) Uploading a text file with Tweet IDs (one per line).
   4) Downloading results which consist of JSON results for each Tweet that has a Compliance results (e.g. has been deleted).
-  
   
 Also, the start of a simple command-line app that references a compliance_client class.
 
