@@ -1,4 +1,4 @@
-# Compliant-client
+# The Compliant (python) client
 
 A set of examples Python scripts for the compliance endpoints. Scripts for:
   1) Creating a Job 
