@@ -17,7 +17,11 @@ A set of example Python scripts for the compliance endpoints. Scripts for:
 	  "reason": "deleted"
   }
  ``` 
-Also, the start of a simple command-line app that references a compliance_client class.
+ 
+ ### Example compliance client
+ #### Command-line app for working with the Twitter API v2 compliance endpoint. 
+ 
+Also, the start of a simple command-line app that references a *compliance* class.
 
 ```
 compliant-client.py
@@ -43,3 +47,39 @@ Options:
     -v --version
     
 ```    
+### Some usage notes
+
+The *compliance.py* class lives in a *../compliance folder*. The *../compliance/compliance.py* file defines a **compliance_client** class. 
+
+```python
+import compliance.compliance
+
+compliance_client = compliance.compliance.compliance_client() #Geez, that some odd looking syntax. 
+
+job_details = compliance_client.create_tweet_compliance_job(settings['name'])
+results = compliance_client.upload_ids(settings['ids-file'], job_details['upload_url'])
+results = compliance_client.download_results(job_details['download_url'], settings['results-file'])
+current_jobs = compliance_client.list_jobs()
+job_details = compliance_client.list_job(settings['id'])
+
+```
+
+### Core objects
+
+This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its lifecycle. 
+
+The Python dictionary that encapsulates Job objects looks like:
+
+```python
+
+job_details = {}
+job_details['name']
+job_details['job_id']
+job_details['upload_url']
+job_details['download_url']
+job_details['status']
+job_details['upload_expires_at']
+job_details['download_expires_at']
+
+
+```
