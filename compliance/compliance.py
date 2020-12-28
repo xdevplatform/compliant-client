@@ -22,7 +22,7 @@ class compliance_client:
         #self.ids_file_path = f"{Path(__file__).parent}/{self.inbox}/tweet_ids.txt"
         #self.results_file_path = f"{Path(__file__).parent}/{self.outbox}/results.txt"
 
-        #No defaults:
+        #'job_details' is the core Job object and is a Python dictionary. No defaults:
         self.job_details = {}
 
         self.resumable = False #TODO?
@@ -40,17 +40,18 @@ class compliance_client:
     def make_results_file_name(job_id):
         return f"results_file_name_root_{job_id}.json"
 
-    def create_tweet_compliance_job(self, job_name):
+  def create_tweet_compliance_job(self, job_name):
         """
         curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
         return job_details dictionary.
         """
         self.name = job_name
         response = requests.post(self.url, data = {'job_name': job_name}, auth = self.auth, headers=self.headers)
+        job_details = {}
 
         if response.status_code != 200:
-            raise Exception(response.status_code, response.text)
-            pass
+            print(f"Error creating Compliance Job: {response.status_code} | {response.text}")
+            return job_details #Empty dictionary is the sign that something went wrong.  
 
         response.encoding = 'utf-8'
 
@@ -63,7 +64,7 @@ class compliance_client:
         self.job_details = job_details
 
         return job_details #Passing back dictionary.
-
+    
     def list_job(self, job_id):
 
         response = requests.get(f"{self.url}/{job_id}", auth=self.auth, headers=self.headers)
@@ -81,7 +82,6 @@ class compliance_client:
 
         return job_details
 
-    #TODO: Method not available yet.
     def list_jobs(self):
         """
         Return a 'data' array of job objects.
@@ -94,12 +94,13 @@ class compliance_client:
             raise Exception(response.status_code, response.text)
             pass
 
-        print(json.dumps(response, indent=4, sort_keys=True))
+        response_dict = response.json()
 
-        return json.loads(response)
+        job_list = response_dict['data']
+
+        return job_list
 
     def upload_ids(self, ids_file_path, url):
-        success = False
 
         self.headers['Content-Type'] = 'text/plain'
 
@@ -109,8 +110,9 @@ class compliance_client:
         response = requests.put(url, data=open(ids_file_path, 'rb'), headers=self.headers)
 
         if response.status_code != 200:
-            raise Exception(response.status_code, response.text)
-            pass
+            print(f"Error uploading Tweet IDs: {response.status_code} | {response.text}")
+            success = False
+            return success
         else:
             success = True
 
@@ -118,44 +120,39 @@ class compliance_client:
 
     def download_results(self, url, results_file_path):
 
-        success = False
-
         response = requests.get(url, headers=self.headers)
 
         if response.status_code != 200:
-            raise Exception(response.status_code, response.text)
+            print(f"Error downloading results: {response.status_code} | {response.text}")
+            success = False
             return success
+        else:
+            success = True
 
         with open(results_file_path, 'w') as f:
             f.write(response.text)
 
-        success = True
-
         return success
-
+   
 if __name__ == "__main__":
 
     client = compliance_client()
 
-    #TODO: Load in configuration? Should we persist Job metadata, or wait until list_jobs is available.
-    #Load Job details from config YAML file?
-    #TODO: Code for loading in Job metadata.
-    #with open(r'./jobs/job_1331380573407825920.yaml') as file:
-    #    job_details = yaml.load(file)
-
     job_details = {}
 
-    job_details['job_id'] = '12345' #Copy your Job ID here.
-
+    #A set of example calls used randomly for testing and learning. 
+    
     #Create Tweet Compliance Job. User Compliance methods coming later.
     #name = "Getting my archive compliant."
     #job_details = client.create_tweet_compliance_job(name)
+    
+    job_details['job_id'] = '12345' #Copy your Job ID here.
 
-    #TODO: Look up details for a given Job ID.
+    #Look up details for a given Job ID.
     job_details = client.list_job(job_details['job_id'])
     print(f"Retreived Job details for Job ID {job_details['job_id']}: {job_details}")
 
-    #TODO: Upload IDs
+    #Upload IDs
     #compliance_client.ids_file_path = "../inbox/tweet_ids.txt"
     #success = client.upload_ids(compliance_client.ids_file_path, job_details['upload_url'])
 
