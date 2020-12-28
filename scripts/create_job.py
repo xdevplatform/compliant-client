@@ -26,11 +26,6 @@ import requests
 from requests_oauthlib import OAuth1
 import os
 
-"""
-   curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
-   return job_details dictionary.
-"""
-
 URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
 
 # Reads in authentication tokens from the os.environ as strings.
