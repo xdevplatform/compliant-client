@@ -28,13 +28,12 @@ def list_jobs():
 
     if response.status_code != 200:
         raise Exception(response.status_code, response.text)
-        pass
 
     response_dict = response.json()
-    job_details = response_dict['data']
+    job_list = response_dict['data']
 
-    return job_details
+    return job_list
 
 if __name__ == "__main__":
-    job_details = list_jobs()
-    print(json.dumps(job_details, indent=4, sort_keys=True))
+    job_list = list_jobs()
+    print(json.dumps(job_list, indent=4, sort_keys=True))
