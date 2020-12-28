@@ -1,3 +1,27 @@
+
+"""
+   Creates a Compliance endpoint Job. This example hardcodes a Job *name*, but assigning a name is optional.
+
+   This script returns JSON that describes the created Job:
+
+   ```python
+
+        job_details['name']
+        job_details['job_id']
+        job_details['upload_url']
+        job_details['download_url']
+        job_details['status']
+        job_details['upload_expires_at']
+        job_details['download_expires_at']
+
+    ```
+
+   curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
+   return job_details dictionary.
+
+   This is a standalone script and has code in common with the other example scripts.
+"""
+
 import requests
 from requests_oauthlib import OAuth1
 import os
@@ -9,6 +33,10 @@ import os
 
 URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
 
+# Reads in authentication tokens from the os.environ as strings.
+#
+# To set your enviornment variables in your terminal run the following line:
+# export 'API_KEY'='<your_api_key>'
 def authenticate():
     api_key = os.environ.get("API_KEY")
     api_secret = os.environ.get("API_SECRET")
@@ -19,6 +47,8 @@ def authenticate():
 
     return auth
 
+#Make a POST request to the Compliance endpoint. Includes an optional 'job_name' request parameter.
+# If successful, it returns a 'job_details' JSON object.
 def create_tweet_compliance_job(name):
 
     auth = authenticate
@@ -27,11 +57,9 @@ def create_tweet_compliance_job(name):
 
     if response.status_code != 200:
         raise Exception(response.status_code, response.text)
-        pass
 
     response.encoding = 'utf-8'
 
-    #print(response.text)
     response_dict = response.json()
     data = response_dict['data']
     job_details = data['job']
