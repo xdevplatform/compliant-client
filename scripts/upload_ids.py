@@ -10,8 +10,9 @@ def upload_ids(ids_file_path, url):
     response = requests.put(url, data=open(ids_file_path, 'rb'), headers=headers)
 
     if response.status_code != 200:
-        raise Exception(response.status_code, response.text)
-        pass
+        print(f"Error uploading Tweet IDs: {response.status_code} | {response.text}")
+        success = False
+        return success
     else:
         success = True
 
