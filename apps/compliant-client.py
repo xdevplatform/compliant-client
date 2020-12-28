@@ -166,37 +166,7 @@ if __name__ == "__main__":
 
     if settings['mode'] == 'all':
 
-        #TODO: refactor 'do all' out of here
         do_all(settings['name'], settings['ids-file'], settings['results-file'])
-
-        # # #Create Tweet Compliance Job.
-        #
-        # begin_dt = datetime.now()
-        #
-        # job_details = compliance_client.create_tweet_compliance_job(settings['name'])
-        #
-        # if len(job_details) == 0:
-        #     print(f"Compliance Job could not be created.")
-        # else:
-        #     print(f"New Compliance Job created.")
-        #     #Upload ids.
-        #     results = compliance_client.upload_ids(settings['ids-file'], job_details['upload_url'])
-        #
-        #     #Monitor Job status until complete.
-        #     start = time.time()
-        #     while True:
-        #         job_details = compliance_client.list_job(job_details['job_id'])
-        #         if job_details['status'] == 'complete':
-        #             break
-        #         time.sleep(SLEEP_INTERVAL)
-        #         print(f"Checking status of '{job_details['name']}' with Job ID {job_details['job_id']}.")
-        #
-        #     print(f"Compliance Job took {(time.time() - start)/60} minutes to complete.")
-        #
-        #     #Download results.
-        #     success = compliance_client.download_results(job_details['download_url'], settings['results-file'])
-        #     if success:
-        #         print(f"Job completed and results written to {settings['results-file']}.")
 
     if settings['mode'] == 'create':
         #Create Tweet Compliance Job.
@@ -230,7 +200,8 @@ if __name__ == "__main__":
             job_details = list_job(settings['id'])
             print(f"Job details: {job_details}")
 
-        #TODO: currently duplicate names are possible, so we may have a list of Jobs.
+        #Currently duplicate names are possible, so we may have a list of Jobs.
+        #This client was recently updates to prevent duplicate names. 
         if 'status' in settings.keys():
 
             print(f"Making request for Jobs list to match on Job status: '{settings['status']}'.")
@@ -258,7 +229,6 @@ if __name__ == "__main__":
                 pass
             else:
                 print(f"Status '{settings['status']}' not known and not supported. Try 'complete', 'running', 'expired', or 'available'.")
-
 
             print(json.dumps(jobs, indent=4, sort_keys=True))
 
