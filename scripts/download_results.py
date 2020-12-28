@@ -2,13 +2,14 @@ import requests
 
 def download_results(url, results_file_path):
 
-    success = False
-
     response = requests.get(url)
 
     if response.status_code != 200:
-        raise Exception(response.status_code, response.text)
-        return False
+        print(f"Error uploading Tweet IDs: {response.status_code} | {response.text}")
+        success = False
+        return success
+    else:
+        success = True
 
     with open(results_file_path, 'w') as f:
         f.write(response.text)
