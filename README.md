@@ -9,7 +9,7 @@ the specified Tweet ID file, checks on the Job status every 30 seconds, then dow
 Here is an example command-line:   
 
 ```bash
-$pythomcompliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+$python compliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
 ```
  
 ## Getting started
@@ -82,6 +82,21 @@ The Job will remain in the "processing" status until it finishes and enters a fi
 }
 ```
 
+## Compliance results objects  
+  
+  Here is an example:
+  
+  ```json
+  {
+	  "id": "906972198136631298",
+	  "action": "delete",
+	  "created_at": "2017-09-10T20:06:37.421Z",
+	  "redacted_at": "2020-07-21T23:37:55.607Z",
+	  "reason": "deleted"
+  }
+ ``` 
+
+
 ## Setting up authentication
 
 To set your enviornment variables in your terminal run the following line:
@@ -129,9 +144,9 @@ There are five scripts:
   5) **download_results.py** Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been 
   deleted):  
 
-## Example client and Compliance class
-### compliant-client/apps/compliant-client.py
-#### Command-line app for working with the Twitter API v2 compliance endpoint. 
+## Example client
++ compliant-client/apps/compliant-client.py
++ Command-line app for working with the Twitter API v2 compliance endpoint. 
 
 
 ```
@@ -158,7 +173,31 @@ Options:
     -v --version
 ```    
 
+### Example calls
+ 
+```bash
+$python compliant-client.py --create --name "MyJob"
+``` 
+ 
+```bash
+$python compliant-client.py --list
+``` 
 
+```bash
+$python compliant-client.py --upload --name "MyJob" --ids-file "./inbox/tweet_ids.txt"
+``` 
+
+```bash
+$python compliant-client.py --download --name "MyJob" --results-file "./oubox/results.txt"
+``` 
+ 
+
+```bash
+$pythomcompliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+``` 
+
+
+## Compliance-client class
 
 ### compliant-client/compliance/compliance.py
 
@@ -179,19 +218,7 @@ job_details = compliance_client.list_job(settings['id'])
   
   
   
-## Compliance results objects  
-  
-  Here is an example:
-  
-  ```json
-  {
-	  "id": "906972198136631298",
-	  "action": "delete",
-	  "created_at": "2017-09-10T20:06:37.421Z",
-	  "redacted_at": "2020-07-21T23:37:55.607Z",
-	  "reason": "deleted"
-  }
- ``` 
+
 
 ## Core objects
 
