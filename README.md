@@ -2,8 +2,32 @@
 
 This **compliant-client** repository hosts a set of simple Python scripts for the Compliance endpoints. There is also a 
 more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
+
+The 'compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
+the specified Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
+
+Here is an example command-line:   
+
+```bash
+$pythomcompliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+```
+ 
+## Getting started
+
+   + Setting up access to Compliance endpoint:  
+   + Authentication:  
+   + Preparing Tweet (and User) ID files. IDs should be in simple text with one ID per line. When uploading 
+   the files, a 'Content-Type' header should be set to 'text/plain'. 
+   + Build methods to update Tweet archives. 
+ 
+## Job attributes and lifecycles 
  
 Compliance Jobs have the following life-cycle:
+
+
+{summary}
+
+
 * Job are created with an optional (and recommended) name. The 'create' process creates a new job with the following attributes:
  
 ```json
@@ -58,60 +82,57 @@ The Job will remain in the "processing" status until it finishes and enters a fi
 }
 ```
 
+## Setting up authentication
 
-### Getting started
+To set your enviornment variables in your terminal run the following line:
 
-   + setting up access to Compliance endpoint 
-   + authentication 
-   + Preparing Tweet (and User) ID files. IDs should be in simple text with one ID per line. When uploading 
-   the files, a 'Content-Type' header should be set to 'text/plain'. 
-   + Build methods to update Tweet archives. 
+```bash
+export 'API_KEY'='<your_api_key>'
+```
+
+```python
+import requests
+from requests_oauthlib import OAuth1
+import os
 
 
+def authenticate():
+    api_key = os.environ.get("API_KEY")
+    api_secret = os.environ.get("API_SECRET")
+    api_token = os.environ.get("API_TOKEN")
+    api_token_secret = os.environ.get("API_TOKEN_SECRET")
+
+    auth = OAuth1(api_key, api_secret, api_token, api_token_secret)
+
+    return auth
+```
+
+## Simple scripts
 ### compliant-client/scripts
-A set of example Python scripts for the compliance endpoints. Scripts for:
-  1) Creating a Job.
-  2) Requesting a list of all existing Jobs. 
-  2) Checking on a specific Job status and retrieving its details.
-  3) Uploading a text file with Tweet IDs (one per line).
-  4) Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been deleted).
-  
-These scripts can be used to create and manage Compliance Jobs and there lifecycles:
 
-+ create_job.py:
-+ list_jobs.py: 
-+ list_job.py: 
-+ upload_ids.py: 
-+ download_results.py:  
+The /scripts folder contains a set of Python scripts for the compliance endpoints. These scripts can be used to create 
+and manage Compliance Jobs and their lifecycles:
 
+These scripts all include a 'main' section that includes some hardcoded settings such as a Job's name or ID. 
+
+```python
+if __name__ == "__main__":
+    name = "My example job."
+    job_details = create_tweet_compliance_job(name)
+    print(f"Created Job {job_details['job_id']}: Details: {job_details}")
+```
+There are five scripts:
+  1) **create_job.py** Creating a Job: 
+  2) **list_jobs.py** Requesting a list of all existing Jobs: 
+  3) **list_job.py** Checking on a specific Job status and retrieving its details: 
+  4) **upload_ids.py**Uploading a text file with Tweet IDs (one per line):  
+  5) **download_results.py** Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been 
+  deleted):  
+
+## Example client and Compliance class
 ### compliant-client/apps/compliant-client.py
-
-
-
-
-### compliant-client/compliance/compliance.py
-
-  
-  
-  
-## Compliance results objects  
-  
-  Here is an example:
-  
-  ```json
-  {
-	  "id": "906972198136631298",
-	  "action": "delete",
-	  "created_at": "2017-09-10T20:06:37.421Z",
-	  "redacted_at": "2020-07-21T23:37:55.607Z",
-	  "reason": "deleted"
-  }
- ``` 
- 
-## Example compliance client
 #### Command-line app for working with the Twitter API v2 compliance endpoint. 
- 
-Also, the start of a simple command-line app that references a *compliance* class.
+
 
 ```
 compliant-client.py
@@ -135,9 +156,11 @@ Options:
     -r --results-file
     -h --help
     -v --version
-    
 ```    
-### Some usage notes
+
+
+
+### compliant-client/compliance/compliance.py
 
 The *compliance.py* class lives in a *../compliance folder*. The *../compliance/compliance.py* file defines a **compliance_client** class. 
 
@@ -153,8 +176,26 @@ current_jobs = compliance_client.list_jobs()
 job_details = compliance_client.list_job(settings['id'])
 
 ```
+  
+  
+  
+## Compliance results objects  
+  
+  Here is an example:
+  
+  ```json
+  {
+	  "id": "906972198136631298",
+	  "action": "delete",
+	  "created_at": "2017-09-10T20:06:37.421Z",
+	  "redacted_at": "2020-07-21T23:37:55.607Z",
+	  "reason": "deleted"
+  }
+ ``` 
 
-### Core objects
+## Core objects
+
+### Job details
 
 This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its lifecycle. 
 
