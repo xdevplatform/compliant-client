@@ -38,9 +38,9 @@ class compliance_client:
         return auth
 
     def make_results_file_name(job_id):
-        return f"results_file_name_root_{job_id}.json"
+        return "results_file_name_root_" + job_id + ".json"
 
-  def create_tweet_compliance_job(self, job_name):
+    def create_tweet_compliance_job(self, job_name):
         """
         curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
         return job_details dictionary.
@@ -67,11 +67,13 @@ class compliance_client:
     
     def list_job(self, job_id):
 
+        job_details = {}
+
         response = requests.get(f"{self.url}/{job_id}", auth=self.auth, headers=self.headers)
 
         if response.status_code != 200:
-            raise Exception(response.status_code, response.text)
-            pass
+            print(f"Error requesting Job details: {response.status_code} | {response.text}")
+            return job_details
 
         response_dict = response.json()
 
@@ -82,17 +84,20 @@ class compliance_client:
 
         return job_details
 
+
     def list_jobs(self):
         """
         Return a 'data' array of job objects.
         """
+
+        job_list = {}
+
         #Optional request parameters: status, start_time, end_time
         response = requests.get(self.url, auth = self.auth, headers=self.headers)
 
         if response.status_code != 200:
-            print(response._content)
-            raise Exception(response.status_code, response.text)
-            pass
+            print(f"Error requesting Job list: {response.status_code} | {response.text}")
+            return job_list
 
         response_dict = response.json()
 

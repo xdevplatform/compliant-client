@@ -52,6 +52,7 @@ def create_tweet_compliance_job(name):
 
     if response.status_code != 200:
         raise Exception(response.status_code, response.text)
+    #TODO: error handling.
 
     response.encoding = 'utf-8'
 

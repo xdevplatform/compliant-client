@@ -27,7 +27,7 @@ def list_job(id):
 
     if response.status_code != 200:
         raise Exception(response.status_code, response.text)
-        pass
+    #TODO: error handling.
 
     response_dict = response.json()
     data = response_dict['data']

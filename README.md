@@ -24,10 +24,6 @@ $python compliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.
  
 Compliance Jobs have the following life-cycle:
 
-
-{summary}
-
-
 * Job are created with an optional (and recommended) name. The 'create' process creates a new job with the following attributes:
  
 ```json
