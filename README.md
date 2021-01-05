@@ -171,27 +171,51 @@ Options:
 
 ### Example calls
  
+Creating a new Job with the name "MyJob": 
+ 
 ```bash
 $python compliant-client.py --create --name "MyJob"
 ``` 
- 
+Request of list of Jobs and their status: 
+
 ```bash
 $python compliant-client.py --list
 ``` 
 
+You can also request a Job's status by Job ID or name:
+
+```bash
+$python compliant-client.py --name MyJob
+``` 
+```bash
+$python compliant-client.py --id 1234567890
+``` 
+
+You can also request Jobs that match a specified state.
+
+List jobs that have expired (that have a download URL that has expired):
+
+```bash
+$python compliant-client.py --status expired
+``` 
+Other options include statuses of 'running', 'complete', 'created', and 'available' (completed Jobs with active download URLs). 
+
+After a Job has been created, the following command will upload Tweet ID from the specified file:
+
 ```bash
 $python compliant-client.py --upload --name "MyJob" --ids-file "./inbox/tweet_ids.txt"
 ``` 
+After a Job has completed, the results can be downloaded to the specified file: 
 
 ```bash
-$python compliant-client.py --download --name "MyJob" --results-file "./oubox/results.txt"
+$python compliant-client.py --download --name "MyJob" --results-file "./outbox/results.txt"
 ``` 
- 
+
+To combine all of these actions into a single command by supplying the Job name, the path to the Tweet ID file, and the path to where the results should be written. The script will create the Job, upload the IDs, check the Job status every 30 seconds until it is completed, then download the results: 
 
 ```bash
 $pythomcompliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
 ``` 
-
 
 ## Compliance-client class
 
@@ -212,16 +236,12 @@ job_details = compliance_client.list_job(settings['id'])
 
 ```
   
-  
-  
-
 
 ## Core objects
 
 ### Job details
 
 This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its lifecycle. 
-
 
 ```json
 {
