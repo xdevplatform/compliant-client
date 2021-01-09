@@ -1,4 +1,3 @@
-
 """
    Creates a Compliance endpoint Job. This example hardcodes a Job *name*, but assigning a name is optional.
 
@@ -63,6 +62,6 @@ def create_tweet_compliance_job(name):
     return job_details #Passing back dictionary.
 
 if __name__ == "__main__":
-    name = "My example job."
+    name = "My example job." #TODO: update with your Job name.
     job_details = create_tweet_compliance_job(name)
     print(f"Created Job {job_details['job_id']}: Details: {job_details}")
