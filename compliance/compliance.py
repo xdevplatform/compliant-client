@@ -134,8 +134,13 @@ class compliance_client:
         else:
             success = True
 
-        with open(results_file_path, 'w') as f:
-            f.write(response.text)
+        try:
+            with open(results_file_path, 'w') as f:
+                f.write(response.text)
+        except:
+            print(f"Error writing results to {results_file_path}")
+            success = False
+            return success
 
         return success
    
