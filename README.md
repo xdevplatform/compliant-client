@@ -1,31 +1,49 @@
-# The Compliant (python) client
+# The Compliant (Python) client
 
-tl;dr This repository provides both simple example scripts and a more elaborate example *client* for the "batch Compliance" endpoint.
+**tl;dr** This repository provides both simple scripts and a more elaborate *client* for working with the "batch Compliance" endpoint.
 
 ## Introduction
-This repository (in the ./scripts folder) hosts a set of simple Python scripts for the Compliance endpoints. These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
+
+### Simple scripts
+This repository hosts a set of simple Python scripts (in the ./scripts folder) for the Compliance endpoints. These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
 1) Create a Compliance Job.
 2) Once Job is created, upload a set of Twitter Tweet IDs (and User) to check for Compliance events related to them.
 3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed.
 4) Request the status of all "active" Jobs. Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing. 
 5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, or some other Compliance event such as geo-scrubbing. 
 
-There is also a 
-more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
+### Example client
 
-The 'compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
+There is also a more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
+
+The 'apps/compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
 the specified Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
+
+When making an 'all' command, you need to specify a Job name, the path to the IDs file for uploading, and the path to 
+file where you want the results written. 
 
 Here is an example command-line:   
 
 ```bash
-$python compliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+$python apps/compliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
 ```
  
 ## Getting started
 
-   + Setting up access to Compliance endpoint.   
-   + Authentication: these scripts and example client share common code for authenticating with the endpoint. The Compliance endpoint relies on OAuth 1.0a authentication. Twitter consumer and user tokens are imported from the local environment.  
+The first step when starting with the batch Compliance endpoint, is establishing access and generating the authentication 
+tokens needed to make requests. You will assign a Twitter App to make your requests, and that App's consumer and access 
+tokens are used to authenticate with an OAuth 1.0a.  
+
+The simple scripts and the example client share common code that imports tokens from the local os environment/session. 
+See the "Setting up authentication" section below for more details.
+
+
+
+
+
+Once you are m
+
+### 
    + Preparing Tweet (and User) ID files. IDs should be in simple text with one ID per line. When uploading 
    the files, a 'Content-Type' header should be set to 'text/plain'. 
    + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update your archives accordingly. This may take the form of making database deletes or writing new file data files. 
@@ -122,6 +140,23 @@ export 'API_SECRET'='<your_api_secret>'
 export 'API_TOKEN'='<your_api_token>'
 export 'API_TOKEN_SECRET'='<your_api_token_secret>'
 ```
+
+A quick way to test your authentication is to make a request for the current "list Jobs." 
+
+
+```bash
+$python ./scripts/list_jobs.yy
+```
+
+```bash
+$python ./apps/compliant-client.py --list
+```
+
+```bash
+$curl 
+
+```
+
 The example scripts and example client code includes this common code that loads these tokens in from the local environment: 
 
 ```python
@@ -140,8 +175,10 @@ def authenticate():
     return auth
 ```
 
+
+
 ## Simple scripts
-### compliant-client/scripts
+##### ./scripts
 
 The /scripts folder contains a set of Python scripts for the compliance endpoints. These scripts can be used to create 
 and manage Compliance Jobs and their lifecycles:
@@ -163,7 +200,7 @@ There are five scripts:
   deleted):  
 
 ## Example client
-+ compliant-client/apps/compliant-client.py
+##### ./apps/compliant-client.py
 + Command-line app for working with the Twitter API v2 compliance endpoint. 
 
 The commannd-line supports the following commands (these are displayed with the -h or --help command):
