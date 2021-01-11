@@ -4,7 +4,7 @@ compliant-client.py
 Usage:
     compliant-client --all --name <name> --ids-file <ids-file> --results-file <results-file>
     compliant-client --create --name <name>
-    compliant-client --list (--name <name> | --id <id>)
+    compliant-client --list [--name <name> | --id <id> | --status <status>]
     compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
     compliant-client --download (--name <name> | --id <id>) --results-file <results-file>
     compliant-client --help
@@ -14,6 +14,7 @@ Options:
     -a --all
     -c --create
     -l --list
+    -s --status
     -u --upload
     -d --download
     -n --name
@@ -24,11 +25,13 @@ Options:
     -v --version
 """
 
-from docopt import docopt #Seriously, this package is soooo nice. http://docopt.org/
+from docopt import docopt
 import time
 from datetime import datetime
 import json
 import compliance.compliance
+#from compliance import compliance
+#import compliance
 
 #Create a reference to the compliance_client class.
 compliance_client = compliance.compliance.compliance_client()
@@ -71,13 +74,22 @@ def handle_input(arguments):
 
     if arguments['--upload'] == True:
         settings['mode'] = 'upload'
-        settings['id'] = arguments['<id>']
+
         settings['ids-file'] = arguments['<ids-file>']
+
+        if arguments['--id'] == True:
+            settings['id'] = arguments['<id>']
+        elif arguments['--name'] == True:
+            settings['name'] = arguments['<name>']
 
     if arguments['--download'] != False:
         settings['mode'] = 'download'
-        settings['id'] = arguments['<id>']
         settings['results-file'] = arguments['<results-file>']
+
+        if arguments['--id'] == True:
+            settings['id'] = arguments['<id>']
+        elif arguments['--name'] == True:
+            settings['name'] = arguments['<name>']
 
     return settings
 
@@ -159,6 +171,11 @@ if __name__ == "__main__":
     #This script has this global reference to exercise the compliance_client class.
     #compliance_client = compliance.compliance.compliance_client()
 
+    #TODO: Troubleshooting packaging packages ;)
+    #import os, sys
+    #print(f'{os.getcwd()}')
+    #print(f'{sys.path}')
+
     job_details = {}
 
     arguments = docopt(__doc__, version='v0.1')
@@ -186,7 +203,7 @@ if __name__ == "__main__":
             print(f"Current Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
 
         if 'name' in settings.keys():
-            jobs = [] #TODO: currently duplicate names are possible, so we may have a list of Jobs.
+            jobs = [] #Currently duplicate names are possible, so we may have a list of Jobs.
             print(f"Making request for Jobs list to look up Job with name '{settings['name']}'.")
             jobs_list = list_jobs()
             for job in jobs_list:
@@ -198,13 +215,13 @@ if __name__ == "__main__":
         if 'id' in settings.keys():
             print(f"Making request for Job ID: '{settings['id']}'.")
             job_details = list_job(settings['id'])
-            print(f"Job details: {job_details}")
+            print(f"Job details: \n {json.dumps(job_details, indent=4, sort_keys=True)}")
 
         #Currently duplicate names are possible, so we may have a list of Jobs.
         #This client was recently updates to prevent duplicate names. 
         if 'status' in settings.keys():
 
-            print(f"Making request for Jobs list to match on Job status: '{settings['status']}'.")
+            print(f"Making request for Jobs list to match on Job that are: '{settings['status']}'.")
             jobs = []
             jobs_list = list_jobs()
 
@@ -222,11 +239,25 @@ if __name__ == "__main__":
 
                     if expiration_time < now_time:
                         jobs.append(job)
-            elif settings['status'] == 'available':
-                pass
 
+            elif settings['status'] == 'created':
+                for job in jobs_list:
+                    if job['status'] == 'created':
+                        jobs.append(job)
+            elif settings['status'] == 'available':
+                date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+                now_time = datetime.strptime(datetime.now().strftime(date_format), date_format)
+
+                for job in jobs_list:
+                    #Convert Job download expiration ISO ISO 8601/RFC 3339 string to date object and compare.
+                    expiration_time = datetime.strptime(job['download_expires_at'], date_format)
+
+                    if expiration_time > now_time:
+                        jobs.append(job)
             elif settings['status'] == 'running':
-                pass
+                for job in jobs_list:
+                    if job['status'] == 'in_progress':
+                        jobs.append(job)
             else:
                 print(f"Status '{settings['status']}' not known and not supported. Try 'complete', 'running', 'expired', or 'available'.")
 
@@ -234,7 +265,9 @@ if __name__ == "__main__":
 
     if settings['mode'] == 'upload':
 
-        #Uploading by Job name or ID.
+        print("Making 'list Jobs' request...")
+
+        #Uploading Job by name or ID.
         if 'name' in settings:
             job_list = list_jobs()
             for job in job_list:
@@ -243,15 +276,28 @@ if __name__ == "__main__":
         elif 'id' in settings:
             job_details = list_job(settings['id'])
 
-        success = upload_ids(settings['ids-files'], job_details['upload_url'])
+        success = upload_ids(settings['ids-file'], job_details['upload_url'])
 
         if success:
-            print(f"Successfully uploaded the {settings['ids-files']} Tweet ID file.")
+            print(f"Successfully uploaded the {settings['ids-file']} Tweet ID file.")
         else:
             print("Error uploading Tweet IDs file.")
 
     if settings['mode'] == 'download':
-        success = download_results(settings['id'], settings['results-file'])
+
+        print("Making 'list Jobs' request...")
+
+        #Downloading Job by name or ID.
+        if 'name' in settings:
+            job_list = list_jobs()
+            for job in job_list:
+                if 'name' in job.keys():
+                    job_details = list_job(job['id'])
+        elif 'id' in settings:
+            job_details = list_job(settings['id'])
+
+        success = download_results(job_details['download_url'], settings['results-file'])
+
         if success:
             print(f"Results file successfully written to {settings['results-file']}")
         else:
