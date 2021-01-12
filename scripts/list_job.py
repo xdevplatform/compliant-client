@@ -23,11 +23,13 @@ def list_job(id):
 
     auth = authenticate()
 
+    job_details = {}
+
     response = requests.get(f"{URL}/{id}", auth=auth)
 
     if response.status_code != 200:
-        raise Exception(response.status_code, response.text)
-    #TODO: error handling.
+        print(f"Error requesting Job details: {response.status_code} | {response.text}")
+        return job_details
 
     response_dict = response.json()
     data = response_dict['data']
@@ -38,4 +40,4 @@ def list_job(id):
 if __name__ == "__main__":
     job_id = '' #Put your Job ID here.
     job_details = list_job(job_id)
-    print(f"Job details: {job_details}")
+    print(f"Job details: \n {json.dumps(job_details, indent=4, sort_keys=True)}")

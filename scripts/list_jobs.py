@@ -24,11 +24,13 @@ def list_jobs():
 
     auth = authenticate()
 
+    job_list = {}
+
     response = requests.get(f"{URL}", auth=auth)
 
     if response.status_code != 200:
-        raise Exception(response.status_code, response.text)
-    #TODO: error handling.
+        print(f"Error requesting Job list: {response.status_code} | {response.text}")
+        return job_list
 
     response_dict = response.json()
     job_list = response_dict['data']

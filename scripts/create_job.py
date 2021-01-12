@@ -23,6 +23,7 @@
 
 import requests
 from requests_oauthlib import OAuth1
+import json
 import os
 
 URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
@@ -49,11 +50,11 @@ def create_tweet_compliance_job(name):
 
     response = requests.post(URL, data = {'job_name': name}, auth=auth)
 
-    if response.status_code != 200:
-        raise Exception(response.status_code, response.text)
-    #TODO: error handling.
+    job_details = {}
 
-    response.encoding = 'utf-8'
+    if response.status_code != 200:
+        print(f"Error creating Compliance Job: {response.status_code} | {response.text}")
+        return job_details #Empty dictionary is the sign that something went wrong.
 
     response_dict = response.json()
     data = response_dict['data']
@@ -64,4 +65,10 @@ def create_tweet_compliance_job(name):
 if __name__ == "__main__":
     name = "My example job." #TODO: update with your Job name.
     job_details = create_tweet_compliance_job(name)
-    print(f"Created Job {job_details['job_id']}: Details: {job_details}")
+
+    if len(job_details) == 0:
+        print(f"Compliance Job could not be created.")
+    else:
+        print(f"New compliance Job created with ID {job_details['id']}")
+        print(json.dumps(job_details, indent=4, sort_keys=True))
+
