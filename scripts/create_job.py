@@ -46,7 +46,7 @@ def authenticate():
 # If successful, it returns a 'job_details' JSON object.
 def create_tweet_compliance_job(name):
 
-    auth = authenticate
+    auth = authenticate()
 
     response = requests.post(URL, data = {'job_name': name}, auth=auth)
 
@@ -63,12 +63,14 @@ def create_tweet_compliance_job(name):
     return job_details #Passing back dictionary.
 
 if __name__ == "__main__":
-    name = "My example job." #TODO: update with your Job name.
+    name = "My little job." #TODO: update with your Job name.
+
+    #Create the Job.
     job_details = create_tweet_compliance_job(name)
 
     if len(job_details) == 0:
         print(f"Compliance Job could not be created.")
     else:
-        print(f"New compliance Job created with ID {job_details['id']}")
+        print(f"New compliance Job created with name '{job_details['name']} amd ID {job_details['id']}:")
         print(json.dumps(job_details, indent=4, sort_keys=True))
 
