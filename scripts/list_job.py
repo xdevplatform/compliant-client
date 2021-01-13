@@ -1,6 +1,7 @@
 import requests
 from requests_oauthlib import OAuth1
 import os
+import json
 
 """
    curl equivalent: -X GET "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs/:id"
@@ -38,6 +39,6 @@ def list_job(id):
     return job_details
 
 if __name__ == "__main__":
-    job_id = '' #Put your Job ID here.
+    job_id = '1349131465015975937' #Put your Job ID here.
     job_details = list_job(job_id)
     print(f"Job details: \n {json.dumps(job_details, indent=4, sort_keys=True)}")
