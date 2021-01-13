@@ -14,13 +14,13 @@ Options:
     -a --all
     -c --create
     -l --list
-    -s --status
+    -s --status STATUS
     -u --upload
     -d --download
-    -n --name
-    -i --id
-    -f --ids-file
-    -r --results-file
+    -n --name NAME
+    -i --id ID
+    -f --ids-file IDFILE
+    -r --results-file RESULTSFILE
     -h --help
     -v --version
 """
@@ -30,8 +30,6 @@ import time
 from datetime import datetime
 import json
 import compliance.compliance
-#from compliance import compliance
-#import compliance
 
 #Create a reference to the compliance_client class.
 compliance_client = compliance.compliance.compliance_client()
@@ -52,47 +50,46 @@ def handle_input(arguments):
 
     if arguments['--all'] == True:
         settings['mode'] = 'all'
-        settings['name'] = arguments['<name>']
-        settings['ids-file'] = arguments['<ids-file>']
-        settings['results-file'] = arguments['<results-file>']
+        settings['name'] = arguments['--name']
+        settings['ids-file'] = arguments['--ids-file']
+        settings['results-file'] = arguments['--results-file']
         #Upload and download URLs are not specified, but rather are determined when Job is created.
 
     if arguments['--create'] ==  True:
         settings['mode'] = 'create'
-        settings['name'] = arguments['<name>']
+        settings['name'] = arguments['--name']
 
     if arguments['--list'] == True:
         settings['mode'] = 'list'
         if arguments['--name'] == True:
-            settings['name'] = arguments['<name>']
+            settings['name'] = arguments['--name']
 
         if arguments['--id'] == True:
-            settings['id'] = arguments['<id>']
+            settings['id'] = arguments['--id']
 
         if arguments['--status'] == True:
-            settings['status'] = arguments['<status>']
+            settings['status'] = arguments['--status']
 
     if arguments['--upload'] == True:
         settings['mode'] = 'upload'
 
-        settings['ids-file'] = arguments['<ids-file>']
+        settings['ids-file'] = arguments['--ids-file']
 
         if arguments['--id'] == True:
-            settings['id'] = arguments['<id>']
+            settings['id'] = arguments['--id']
         elif arguments['--name'] == True:
-            settings['name'] = arguments['<name>']
+            settings['name'] = arguments['--name']
 
     if arguments['--download'] != False:
         settings['mode'] = 'download'
-        settings['results-file'] = arguments['<results-file>']
+        settings['results-file'] = arguments['--results-file']
 
         if arguments['--id'] == True:
-            settings['id'] = arguments['<id>']
+            settings['id'] = arguments['--id']
         elif arguments['--name'] == True:
-            settings['name'] = arguments['<name>']
+            settings['name'] = arguments['--name']
 
     return settings
-
 
 def is_job_name_unique(name):
     job_list = list_jobs()
@@ -167,6 +164,50 @@ def do_all(name, ids_file, results_file):
         if success:
             print(f"Job completed and results written to {results_file}. Download took {duration} minutes.")
 
+def list_by_status(settings):
+
+    print(f"Making request for Jobs list to match on Job that are: '{settings['status']}'.")
+    jobs = []
+    jobs_list = list_jobs()
+
+    if settings['status'] == 'complete':
+        for job in jobs_list:
+            if job['status'] == 'complete':
+                jobs.append(job)
+    elif settings['status'] == 'expired':
+        date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+        now_time = datetime.strptime(datetime.now().strftime(date_format), date_format)
+
+        for job in jobs_list:
+            #Convert Job download expiration ISO ISO 8601/RFC 3339 string to date object and compare.
+            expiration_time = datetime.strptime(job['download_expires_at'], date_format)
+
+            if expiration_time < now_time:
+                jobs.append(job)
+
+    elif settings['status'] == 'created':
+        for job in jobs_list:
+            if job['status'] == 'created':
+                jobs.append(job)
+    elif settings['status'] == 'available':
+        date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+        now_time = datetime.strptime(datetime.now().strftime(date_format), date_format)
+
+        for job in jobs_list:
+            #Convert Job download expiration ISO ISO 8601/RFC 3339 string to date object and compare.
+            expiration_time = datetime.strptime(job['download_expires_at'], date_format)
+
+            if expiration_time > now_time:
+                jobs.append(job)
+    elif settings['status'] == 'running':
+        for job in jobs_list:
+            if job['status'] == 'in_progress':
+                jobs.append(job)
+    else:
+        print(f"Status '{settings['status']}' not known and not supported. Try 'complete', 'running', 'expired', or 'available'.")
+
+    return jobs
+
 if __name__ == "__main__":
     #This script has this global reference to exercise the compliance_client class.
     #compliance_client = compliance.compliance.compliance_client()
@@ -178,7 +219,7 @@ if __name__ == "__main__":
 
     job_details = {}
 
-    arguments = docopt(__doc__, version='v0.1')
+    arguments = docopt(__doc__, version='v1.0')
     settings = handle_input(arguments)
 
     if settings['mode'] == 'all':
@@ -221,45 +262,7 @@ if __name__ == "__main__":
         #This client was recently updates to prevent duplicate names. 
         if 'status' in settings.keys():
 
-            print(f"Making request for Jobs list to match on Job that are: '{settings['status']}'.")
-            jobs = []
-            jobs_list = list_jobs()
-
-            if settings['status'] == 'complete':
-                for job in jobs_list:
-                    if job['status'] == 'complete':
-                            jobs.append(job)
-            elif settings['status'] == 'expired':
-                date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-                now_time = datetime.strptime(datetime.now().strftime(date_format), date_format)
-
-                for job in jobs_list:
-                    #Convert Job download expiration ISO ISO 8601/RFC 3339 string to date object and compare.
-                    expiration_time = datetime.strptime(job['download_expires_at'], date_format)
-
-                    if expiration_time < now_time:
-                        jobs.append(job)
-
-            elif settings['status'] == 'created':
-                for job in jobs_list:
-                    if job['status'] == 'created':
-                        jobs.append(job)
-            elif settings['status'] == 'available':
-                date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-                now_time = datetime.strptime(datetime.now().strftime(date_format), date_format)
-
-                for job in jobs_list:
-                    #Convert Job download expiration ISO ISO 8601/RFC 3339 string to date object and compare.
-                    expiration_time = datetime.strptime(job['download_expires_at'], date_format)
-
-                    if expiration_time > now_time:
-                        jobs.append(job)
-            elif settings['status'] == 'running':
-                for job in jobs_list:
-                    if job['status'] == 'in_progress':
-                        jobs.append(job)
-            else:
-                print(f"Status '{settings['status']}' not known and not supported. Try 'complete', 'running', 'expired', or 'available'.")
+            jobs = list_by_status(settings)
 
             print(json.dumps(jobs, indent=4, sort_keys=True))
 
