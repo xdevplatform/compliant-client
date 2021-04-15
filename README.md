@@ -2,31 +2,41 @@
 
 **tl;dr** This repository provides both simple scripts and a more elaborate *client* for working with the "batch Compliance" endpoint.
 
+Status: getting new User functionality now that that update has been made. Using this README to help design new features.
+
+
+
 ## Introduction
 
 ### Simple scripts
 This repository hosts a set of simple Python scripts (in the ./scripts folder) for the Compliance endpoints. These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
 1) Create a Compliance Job.
-2) Once Job is created, upload a set of Twitter Tweet IDs (and User) to check for Compliance events related to them.
+2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events related to them.
 3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed.
 4) Request the status of all "active" Jobs. Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing. 
-5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, or some other Compliance event such as geo-scrubbing. 
+5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which User accounts have updates, or some other Compliance event such as geo-scrubbing. 
 
 ### Example client
 
 There is also a more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
 
 The 'apps/compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
-the specified Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
+a specified User ID or Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
 
 When making an 'all' command, you need to specify a Job name, the path to the IDs file for uploading, and the path to 
 file where you want the results written. 
 
-Here is an example command-line:   
+Here is an example command-line for uploading a Tweet ID file, monitoring a Job's progress, and writing the downloaded results to a local file:   
 
 ```bash
-$python apps/compliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+$python apps/compliant-client.py --all --name "CheckingTweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/tweet_results.json"
 ```
+Here's an example client command-line for working with a User ID file:  
+
+```bash
+$python apps/compliant-client.py --all --name "CheckingUsers" --ids-file "../inbox/user_ids.txt" --results-file "../outbox/user_results.json"
+```
+
  
 ## Getting started
 
@@ -37,15 +47,10 @@ tokens are used to authenticate with an OAuth 1.0a.
 The simple scripts and the example client share common code that imports tokens from the local os environment/session. 
 See the "Setting up authentication" section below for more details.
 
+Other steps for preparing to use the batch Compliance endpoint include: 
 
-
-
-
-Once you are m
-
-### 
-   + Preparing Tweet (and User) ID files. IDs should be in simple text with one ID per line. When uploading 
-   the files, a 'Content-Type' header should be set to 'text/plain'. 
+   + Preparing Tweet and User ID files. IDs should be in simple text with one ID per line. When uploading 
+   the files, a 'Content-Type' header should be set to 'text/plain'. See below for an example. 
    + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update your archives accordingly. This may take the form of making database deletes or writing new file data files. 
  
 ## Job attributes and lifecycles 
@@ -67,7 +72,7 @@ Let's dig into some of the details...
 ```
 These Job details include an URL for uploading your ID. There is also an expiration time for that URL. Once a Job is created the upload link is available for 15 minutes. If the link expires before you upload the IDs, a new Job will need to be created. 
  
-* Tweet IDs are uploaded to a cloud file system. Tweet IDs are written to a simple text file with one ID per line. 
+* Tweet and User IDs are uploaded to a cloud file system. The IDs are written to a simple text file with one ID per line. Below is an example for a set of Tweet IDs, and the format is identical for User Ids. 
 
 #### Tweet ID file 
 
@@ -84,7 +89,7 @@ These Job details include an URL for uploading your ID. There is also an expirat
 900152816081219584
 ```
 
-* Uploaded Tweets are checked for Compliance, a process that can take many minutes (and hours?) to complete. 
+* Uploaded IDs are checked for Compliance, a process that can take many minutes (and hours?) to complete. 
 
 ```json
 {
@@ -117,7 +122,7 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
 
 ## Compliance results objects  
   
-  Here is an example:
+  Here is an example for a Tweet Complaince event:
   
   ```json
   {
@@ -126,6 +131,13 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
   "created_at": "2017-09-10T20:06:37.421Z",
   "redacted_at": "2020-07-21T23:37:55.607Z",
   "reason": "deleted"
+  }
+ ``` 
+
+Here is an example for a User Complaince event:
+
+  ```json
+  {
   }
  ``` 
 
@@ -145,17 +157,13 @@ A quick way to test your authentication is to make a request for the current "li
 
 
 ```bash
-$python ./scripts/list_jobs.yy
+$python ./scripts/list_jobs.py
 ```
 
 ```bash
 $python ./apps/compliant-client.py --list
 ```
 
-```bash
-$curl 
-
-```
 
 The example scripts and example client code includes this common code that loads these tokens in from the local environment: 
 

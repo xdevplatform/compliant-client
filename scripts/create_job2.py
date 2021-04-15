@@ -1,4 +1,17 @@
 """
+create_job2.py
+
+Usage:
+    create_job2 --name <name>
+
+Options:
+    -n --name NAME
+
+"""
+
+from docopt import docopt
+
+"""
    Creates a Compliance endpoint Job. This example hardcodes a Job *name*, but assigning a name is optional.
 
    This script returns JSON that describes the created Job:
@@ -63,10 +76,11 @@ def create_tweet_compliance_job(name):
     return job_details #Passing back dictionary.
 
 if __name__ == "__main__":
-    name = "My little job." #TODO: update with your Job name.
+
+    arguments = docopt(__doc__, version='v1.0')
 
     #Create the Job.
-    job_details = create_tweet_compliance_job(name)
+    job_details = create_tweet_compliance_job(arguments['name'])
 
     if len(job_details) == 0:
         print(f"Compliance Job could not be created.")
