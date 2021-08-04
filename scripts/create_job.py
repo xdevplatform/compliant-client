@@ -2,14 +2,15 @@
 create_job2.py
 
 Usage:
-    create_job2 --name <name>
+    create_job2 --job-type <job-type> --name <name>
 
 Options:
+    -t --job-type JOBTYPE
     -n --name NAME
 
 """
 
-from docopt import docopt
+from docopt import docopt #The above comment defines the arguments this script supports.
 
 """
    Creates a Compliance endpoint Job. This example hardcodes a Job *name*, but assigning a name is optional.
@@ -39,7 +40,7 @@ from requests_oauthlib import OAuth1
 import json
 import os
 
-URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
+URL = 'https://api.twitter.com/2/compliance/jobs'
 
 # Reads in authentication tokens from the os.environ as strings.
 #
@@ -57,11 +58,11 @@ def authenticate():
 
 #Make a POST request to the Compliance endpoint. Includes an optional 'job_name' request parameter.
 # If successful, it returns a 'job_details' JSON object.
-def create_tweet_compliance_job(name):
+def create_tweet_compliance_job(job_type, name):
 
     auth = authenticate()
 
-    response = requests.post(URL, data = {'job_name': name}, auth=auth)
+    response = requests.post(URL, data = {'job_type': job_type, 'job_name': name}, auth=auth)
 
     job_details = {}
 
@@ -80,11 +81,11 @@ if __name__ == "__main__":
     arguments = docopt(__doc__, version='v1.0')
 
     #Create the Job.
-    job_details = create_tweet_compliance_job(arguments['name'])
+    job_details = create_tweet_compliance_job(arguments['--job-type'], arguments['--name'])
 
     if len(job_details) == 0:
         print(f"Compliance Job could not be created.")
     else:
-        print(f"New compliance Job created with name '{job_details['name']} amd ID {job_details['id']}:")
+        print(f"New compliance Job created with name '{job_details['name']} and ID {job_details['id']}:")
         print(json.dumps(job_details, indent=4, sort_keys=True))
 

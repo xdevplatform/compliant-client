@@ -8,7 +8,7 @@ import json
    returns job_details dictionary.
 """
 
-URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
+URL = 'https://api.twitter.com/2/compliance/jobs'
 
 def authenticate():
     api_key = os.environ.get("API_KEY")
@@ -20,13 +20,13 @@ def authenticate():
 
     return auth
 
-def list_jobs():
+def list_jobs(job_type):
 
     auth = authenticate()
 
     job_list = {}
 
-    response = requests.get(f"{URL}", auth=auth)
+    response = requests.get(f"{URL}?job_type={job_type}", auth=auth)
 
     if response.status_code != 200:
         print(f"Error requesting Job list: {response.status_code} | {response.text}")
@@ -40,3 +40,8 @@ def list_jobs():
 if __name__ == "__main__":
     job_list = list_jobs()
     print(json.dumps(job_list, indent=4, sort_keys=True))
+
+    job_type = 'tweets' #Put the job type here: 'tweets or users.
+    job_details = list_jobs(job_type)
+    print(f"Job details: \n {json.dumps(job_details, indent=4, sort_keys=True)}")
+

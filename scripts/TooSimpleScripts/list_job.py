@@ -8,7 +8,7 @@ import json
    returns job_details dictionary.
 """
 
-URL = 'https://api.twitter.com/2/tweets/compliance/jobs'
+URL = 'https://api.twitter.com/2/compliance/jobs'
 
 def authenticate():
     api_key = os.environ.get("API_KEY")

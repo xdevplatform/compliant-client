@@ -1,17 +1,18 @@
 import requests
-from requests_oauthlib import OAuth1
 import json
 import os
 
 class compliance_client:
     def __init__(self):
         self.domain = 'https://api.twitter.com'
-        self.path = '/2/tweets/compliance/jobs'
+        self.path = '/2/compliance/jobs'
         self.url = f"{self.domain}{self.path}"
 
         #self.config_file = './config/config.yaml'
         self.headers = {}
-        self.auth = self.authenticate() #Set up authentication when class is created.
+
+        #TODO - Remove
+        self.headers['x-des-apiservices'] = 'staging1'
 
         self.ids_file_path = ""
         self.results_file_path = ""
@@ -27,26 +28,43 @@ class compliance_client:
 
         self.resumable = False #TODO?
 
-    def authenticate(self):
-        api_key = os.environ.get("API_KEY")
-        api_secret = os.environ.get("API_SECRET")
-        api_token = os.environ.get("API_TOKEN")
-        api_token_secret = os.environ.get("API_TOKEN_SECRET")
+    # def authenticate(self):
+    #     api_key = os.environ.get("API_KEY")
+    #     api_secret = os.environ.get("API_SECRET")
+    #     api_token = os.environ.get("API_TOKEN")
+    #     api_token_secret = os.environ.get("API_TOKEN_SECRET")
+    #
+    #     auth = OAuth1(api_key, api_secret, api_token, api_token_secret)
+    #
+    #     return auth
 
-        auth = OAuth1(api_key, api_secret, api_token, api_token_secret)
+    def bearer_oauth(self, r):
+        # To set your environment variables in your terminal run the following line:
+        # export 'BEARER_TOKEN'='<your_bearer_token>'
+        bearer_token = os.environ.get("BEARER_TOKEN")
+        r.headers['Authorization'] =  "Bearer {}".format(bearer_token)
 
-        return auth
+        return r
 
     def make_results_file_name(job_id):
         return "results_file_name_root_" + job_id + ".json"
 
-    def create_tweet_compliance_job(self, job_name):
+    def create_tweet_compliance_job(self, job_type, job_name):
         """
         curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
         return job_details dictionary.
         """
-        self.name = job_name
-        response = requests.post(self.url, data = {'job_name': job_name}, auth = self.auth, headers=self.headers)
+        self.headers['Content-type'] = 'application/json'
+
+        #Set the Job request parameters.
+        data = {}
+        data['job_type'] = job_type
+        data['job_name'] = job_name
+
+        data =  json.dumps(data)
+
+        self.job_name = job_name
+        response = requests.post(self.url, data = data, auth = self.bearer_oauth, headers=self.headers)
         job_details = {}
 
         if response.status_code != 200:
@@ -56,9 +74,8 @@ class compliance_client:
         response.encoding = 'utf-8'
 
         response_dict = response.json()
-        data = response_dict['data']
+        job_details = response_dict['data']
 
-        job_details = data['job']
         job_details['job_id'] = job_details['id'] #TODO: return 'job-id' instead?
 
         self.job_details = job_details
@@ -69,7 +86,7 @@ class compliance_client:
 
         job_details = {}
 
-        response = requests.get(f"{self.url}/{job_id}", auth=self.auth, headers=self.headers)
+        response = requests.get(f"{self.url}/{job_id}", auth=self.bearer_oauth, headers=self.headers)
 
         if response.status_code != 200:
             print(f"Error requesting Job details: {response.status_code} | {response.text}")
@@ -77,23 +94,21 @@ class compliance_client:
 
         response_dict = response.json()
 
-        data = response_dict['data']
-        job_details = data['job']
+        job_details = response_dict['data']
 
         job_details['job_id'] = job_details['id'] #TODO: for consistency, seems this attribute should be returned as 'job_id'
 
         return job_details
 
 
-    def list_jobs(self):
+    def list_jobs(self, job_type):
         """
         Return a 'data' array of job objects.
-        """
-
+       """
         job_list = {}
 
         #Optional request parameters: status, start_time, end_time
-        response = requests.get(self.url, auth = self.auth, headers=self.headers)
+        response = requests.get(f"{self.url}?job_type={job_type}", auth=self.bearer_oauth, headers=self.headers)
 
         if response.status_code != 200:
             print(f"Error requesting Job list: {response.status_code} | {response.text}")
@@ -153,14 +168,15 @@ if __name__ == "__main__":
     #A set of example calls used randomly for testing and learning. 
     
     #Create Tweet Compliance Job. User Compliance methods coming later.
-    #name = "Getting my archive compliant."
-    #job_details = client.create_tweet_compliance_job(name)
+    name = "Getting my archive compliant. Starting with Tweets..."
+    job_type = 'tweets'
+    job_details = client.create_tweet_compliance_job(job_type, name)
     
-    job_details['job_id'] = '12345' #Copy your Job ID here.
+    #job_details['job_id'] = '12345' #Copy your Job ID here.
 
     #Look up details for a given Job ID.
-    job_details = client.list_job(job_details['job_id'])
-    print(f"Retreived Job details for Job ID {job_details['job_id']}: {job_details}")
+    #job_details = client.list_job(job_details['job_id'])
+    #print(f"Retreived Job details for Job ID {job_details['job_id']}: {job_details}")
 
     #Upload IDs
     #compliance_client.ids_file_path = "../inbox/tweet_ids.txt"

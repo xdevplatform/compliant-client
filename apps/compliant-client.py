@@ -2,9 +2,11 @@
 compliant-client.py
 
 Usage:
-    compliant-client --all --name <name> --ids-file <ids-file> --results-file <results-file>
-    compliant-client --create --name <name>
-    compliant-client --list [--name <name> | --id <id> | --status <status>]
+    compliant-client --all --job-type <job-type> --name <name> --ids-file <ids-file> --results-file <results-file>
+    compliant-client --create --job-type <job-type> --name <name>
+    #Not sure how to plug in job-type into this 'super' method that does both id and all lists...
+    #Client will return both Tweet and User jobs if job-type is not specified.
+    compliant-client --list [--job-type <job-type> | --name <name> | --id <id> | --status <status>]
     compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
     compliant-client --download (--name <name> | --id <id>) --results-file <results-file>
     compliant-client --help
@@ -17,9 +19,10 @@ Options:
     -s --status STATUS
     -u --upload
     -d --download
+    -t --job-type JOBTYPE
     -n --name NAME
     -i --id ID
-    -f --ids-file IDFILE
+    -f --ids-file IDSFILE
     -r --results-file RESULTSFILE
     -h --help
     -v --version
@@ -50,6 +53,7 @@ def handle_input(arguments):
 
     if arguments['--all'] == True:
         settings['mode'] = 'all'
+        settings['job-type'] = arguments['--job-type']
         settings['name'] = arguments['--name']
         settings['ids-file'] = arguments['--ids-file']
         settings['results-file'] = arguments['--results-file']
@@ -57,54 +61,61 @@ def handle_input(arguments):
 
     if arguments['--create'] ==  True:
         settings['mode'] = 'create'
+        settings['job-type'] = arguments['--job-type']
         settings['name'] = arguments['--name']
 
     if arguments['--list'] == True:
         settings['mode'] = 'list'
-        if arguments['--name'] == True:
+        if arguments['--name'] != None:
             settings['name'] = arguments['--name']
 
-        if arguments['--id'] == True:
+        if arguments['--id'] != None:
             settings['id'] = arguments['--id']
 
-        if arguments['--status'] == True:
+        if arguments['--job-type'] != None:
+            settings['job-type'] = arguments['--job-type']
+
+        if arguments['--status'] != None:
             settings['status'] = arguments['--status']
+
+        #TODO: Do some checking and see if we have what we need...
 
     if arguments['--upload'] == True:
         settings['mode'] = 'upload'
 
         settings['ids-file'] = arguments['--ids-file']
 
-        if arguments['--id'] == True:
+        if arguments['--id'] != None:
             settings['id'] = arguments['--id']
-        elif arguments['--name'] == True:
+        elif arguments['--name'] != None:
             settings['name'] = arguments['--name']
 
-    if arguments['--download'] != False:
+    if arguments['--download'] == True:
         settings['mode'] = 'download'
         settings['results-file'] = arguments['--results-file']
 
-        if arguments['--id'] == True:
+        if arguments['--id'] != None:
             settings['id'] = arguments['--id']
-        elif arguments['--name'] == True:
+        elif arguments['--name'] != None:
             settings['name'] = arguments['--name']
 
     return settings
 
-def is_job_name_unique(name):
-    job_list = list_jobs()
+def is_job_name_unique(job_type, job_name):
+    #TODO: check both types and comapre with combined list?
+    job_list = list_jobs(job_type)
     for job in job_list:
-        if job['name'] == name:
+        if job['job_name'] == job_name:
             return False
     return True
 
-def create_job(name):
+def create_job(job_type, job_name):
     job_details = {}
 
-    if is_job_name_unique(name):
-        job_details = compliance_client.create_tweet_compliance_job(name)
+    if is_job_name_unique(job_type, job_name):
+        job_details = compliance_client.create_tweet_compliance_job(job_type, job_name)
     else:
-        print(f"This client script requires that Job names be unique. A Job with name '{name}' already exists.")
+        print(f"This client script requires that Job names be unique. A Job with name '{job_name}' already exists.")
 
     return job_details
 
@@ -118,25 +129,25 @@ def download_results(download_url, results_file):
     success = compliance_client.download_results(download_url, results_file)
     return success
 
-def list_jobs():
-    jobs_list = compliance_client.list_jobs()
+def list_jobs(job_type):
+    jobs_list = compliance_client.list_jobs(job_type)
     return jobs_list
 
 def list_job(id):
     job_details = compliance_client.list_job(id)
     return job_details
 
-def do_all(name, ids_file, results_file):
+def do_all(job_type, job_name, ids_file, results_file):
     #This is a chatty method, and may benefit from a verbose/quiet setting.
 
     begin_dt = datetime.now() #Timing how long the process takes.
 
-    job_details = create_job(name) #Create Tweet Compliance Job.
+    job_details = create_job(job_type, job_name) #Create Tweet Compliance Job.
 
     if len(job_details) == 0: #No Job details returned? Something went wrong.
         print(f"Compliance Job could not be created.")
     else:
-        print(f"New Compliance Job named '{name}' created.")
+        print(f"New Compliance Job named '{job_name}' created.")
 
         start = time.time()
         success =  upload_ids(ids_file, job_details['upload_url'])
@@ -149,10 +160,12 @@ def do_all(name, ids_file, results_file):
         start = time.time()
         while True:
             job_details = list_job(job_details['id'])
+            #TODO: remove
+            print(job_details['status'])
             if job_details['status'] == 'complete':
                 break
             time.sleep(SLEEP_INTERVAL)
-            print(f"Checking status of '{job_details['name']}' with Job ID {job_details['job_id']}.")
+            print(f"Checking status of '{job_details['job_name']}' with Job ID {job_details['job_id']}.")
 
         duration = '%.1f' % ((time.time() - start)/60)
         print(f"Compliance Job took {duration} minutes to complete.")
@@ -168,7 +181,17 @@ def list_by_status(settings):
 
     print(f"Making request for Jobs list to match on Job that are: '{settings['status']}'.")
     jobs = []
-    jobs_list = list_jobs()
+
+    if not 'job-type' in settings.keys():
+
+        #Get Tweet jobs
+        jobs_list = list_jobs('tweets')
+
+        #Get User jobs
+        jobs_list = jobs_list + list_jobs('users')
+
+    else:
+        jobs_list = list_jobs(settings['job-type'])
 
     if settings['status'] == 'complete':
         for job in jobs_list:
@@ -212,11 +235,6 @@ if __name__ == "__main__":
     #This script has this global reference to exercise the compliance_client class.
     #compliance_client = compliance.compliance.compliance_client()
 
-    #TODO: Troubleshooting packaging packages ;)
-    #import os, sys
-    #print(f'{os.getcwd()}')
-    #print(f'{sys.path}')
-
     job_details = {}
 
     arguments = docopt(__doc__, version='v1.0')
@@ -224,11 +242,11 @@ if __name__ == "__main__":
 
     if settings['mode'] == 'all':
 
-        do_all(settings['name'], settings['ids-file'], settings['results-file'])
+        do_all(settings['job-type'], settings['name'], settings['ids-file'], settings['results-file'])
 
     if settings['mode'] == 'create':
         #Create Tweet Compliance Job.
-        job_details = create_job(settings['name'])
+        job_details = create_job(settings['job-type'], settings['name'])
 
         if len(job_details) == 0:
             print(f"Compliance Job could not be created.")
@@ -238,32 +256,45 @@ if __name__ == "__main__":
 
     if settings['mode'] == 'list':
 
-        if not 'name' in settings.keys() and not 'id' in settings.keys() and not 'status' in settings.keys():
-            print(f"Making request for Jobs list.")
-            jobs_list = list_jobs()
-            print(f"Current Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
+        if not 'job-type' in settings.keys() and not 'name' in settings.keys() and not 'id' in settings.keys() and not 'status' in settings.keys():
+            print(f"Making request for list of Tweets Jobs")
+            jobs_list = list_jobs('tweets')
+            print(f"Current Tweet Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
+            print(f"Making request for list of User Jobs")
+            jobs_list = list_jobs('users')
+            print(f"Current User Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
 
-        if 'name' in settings.keys():
+        if 'job-type' in settings.keys() and not 'status' in settings.keys():
+            print(f"Making request for list of Jobs of type {settings['job-type']}")
+            jobs_list = list_jobs(settings['job-type'])
+            print(f"Current User Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
+
+        if 'name' in settings.keys() and not 'status' in settings.keys():
             jobs = [] #Currently duplicate names are possible, so we may have a list of Jobs.
             print(f"Making request for Jobs list to look up Job with name '{settings['name']}'.")
-            jobs_list = list_jobs()
+            jobs_list = list_jobs('tweets')
             for job in jobs_list:
-                if 'name' in job.keys():
-                    if job['name'] == settings['name']:
+                if 'job_name' in job.keys():
+                    if job['job_name'] == settings['name']:
                         jobs.append(job)
+
+            jobs_list = list_jobs('users')
+            for job in jobs_list:
+                if 'job_name' in job.keys():
+                    if job['job_name'] == settings['name']:
+                        jobs.append(job)
+
             print(json.dumps(jobs, indent=4, sort_keys=True))
 
-        if 'id' in settings.keys():
+        if 'id' in settings.keys() and not 'status' in settings.keys():
             print(f"Making request for Job ID: '{settings['id']}'.")
             job_details = list_job(settings['id'])
             print(f"Job details: \n {json.dumps(job_details, indent=4, sort_keys=True)}")
 
         #Currently duplicate names are possible, so we may have a list of Jobs.
-        #This client was recently updates to prevent duplicate names. 
+        #This client was recently updated to prevent duplicate names.
         if 'status' in settings.keys():
-
             jobs = list_by_status(settings)
-
             print(json.dumps(jobs, indent=4, sort_keys=True))
 
     if settings['mode'] == 'upload':
