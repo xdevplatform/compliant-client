@@ -2,10 +2,10 @@
 list_jobs.py
 
 Usage:
-    list_jobs --job-type <job-type>
+    list_jobs --type <type>
 
 Options:
-    -t --job-type JOBTYPE
+    -t --type TYPE
 """
 
 from docopt import docopt #The above comment defines the arguments this script supports.
@@ -30,7 +30,7 @@ def bearer_oauth(r):
 
     return r
 
-def list_jobs(job_type):
+def list_jobs(type):
 
     job_list = {}
 
@@ -39,7 +39,7 @@ def list_jobs(job_type):
     headers['x-des-apiservices'] = 'staging1'
 
     #Injecting Job type into the request...
-    response = requests.get(f"{URL}?job_type={job_type}", auth=bearer_oauth, headers=headers)
+    response = requests.get(f"{URL}?job_type={type}", auth=bearer_oauth, headers=headers)
 
     if response.status_code != 200:
         print(f"Error requesting Job list: {response.status_code} | {response.text}")
@@ -54,6 +54,6 @@ if __name__ == "__main__":
 
     arguments = docopt(__doc__, version='v1.0')
 
-    job_list = list_jobs(arguments['--job-type'])
+    job_list = list_jobs(arguments['--type'])
     print(json.dumps(job_list, indent=4, sort_keys=True))
 

@@ -1,11 +1,11 @@
 """
-create_job2.py
+create_job.py
 
 Usage:
-    create_job2 --job-type <job-type> --name <name>
+    create_job --type <type> --name <name>
 
 Options:
-    -t --job-type JOBTYPE
+    -t --type TYPE
     -n --name NAME
 
 """
@@ -13,23 +13,21 @@ Options:
 from docopt import docopt #The above comment defines the arguments this script supports.
 
 """
-   Creates a Compliance endpoint Job. This example hardcodes a Job *name*, but assigning a name is optional.
+   Creates a Compliance endpoint Job. 
 
    This script returns JSON that describes the created Job:
 
    ```python
 
         job_details['name']
-        job_details['job_id']
+        job_details['id']
         job_details['upload_url']
         job_details['download_url']
         job_details['status']
         job_details['upload_expires_at']
         job_details['download_expires_at']
-
     ```
-
-   curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
+   curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/compliance/jobs"
    return job_details dictionary.
 
    This is a standalone script and has code in common with the other example scripts.
@@ -42,27 +40,32 @@ import os
 
 URL = 'https://api.twitter.com/2/compliance/jobs'
 
-# Reads in authentication tokens from the os.environ as strings.
-#
-# To set your enviornment variables in your terminal run the following line:
-# export 'API_KEY'='<your_api_key>'
-def authenticate():
-    api_key = os.environ.get("API_KEY")
-    api_secret = os.environ.get("API_SECRET")
-    api_token = os.environ.get("API_TOKEN")
-    api_token_secret = os.environ.get("API_TOKEN_SECRET")
+def bearer_oauth(r):
+    # To set your environment variables in your terminal run the following line:
+    # export 'BEARER_TOKEN'='<your_bearer_token>'
+    bearer_token = os.environ.get("BEARER_TOKEN")
+    r.headers['Authorization'] =  "Bearer {}".format(bearer_token)
 
-    auth = OAuth1(api_key, api_secret, api_token, api_token_secret)
+    return r
 
-    return auth
-
-#Make a POST request to the Compliance endpoint. Includes an optional 'job_name' request parameter.
+#Make a POST request to the Compliance endpoint. Includes an optional 'name' request parameter.
 # If successful, it returns a 'job_details' JSON object.
-def create_tweet_compliance_job(job_type, name):
+def create_tweet_compliance_job(type, name):
 
-    auth = authenticate()
+    headers = {}
+    headers['Content-type'] = 'application/json'
+    headers['User-Agent'] = "BatchCompliancePythonScript"
+    #TODO: remove!
+    headers['x-des-apiservices'] = 'staging1'
 
-    response = requests.post(URL, data = {'job_type': job_type, 'job_name': name}, auth=auth)
+    #Set the Job request parameters.
+    data = {}
+    data['type'] = type
+    data['name'] = name
+
+    data =  json.dumps(data)
+
+    response = requests.post(URL, data = data, auth=bearer_oauth, headers=headers)
 
     job_details = {}
 
@@ -81,7 +84,7 @@ if __name__ == "__main__":
     arguments = docopt(__doc__, version='v1.0')
 
     #Create the Job.
-    job_details = create_tweet_compliance_job(arguments['--job-type'], arguments['--name'])
+    job_details = create_tweet_compliance_job(arguments['--type'], arguments['--name'])
 
     if len(job_details) == 0:
         print(f"Compliance Job could not be created.")

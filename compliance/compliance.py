@@ -46,10 +46,10 @@ class compliance_client:
 
         return r
 
-    def make_results_file_name(job_id):
-        return "results_file_name_root_" + job_id + ".json"
+    def make_results_file_name(id):
+        return "results_file_name_root_" + id + ".json"
 
-    def create_tweet_compliance_job(self, job_type, job_name):
+    def create_tweet_compliance_job(self, type, name):
         """
         curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
         return job_details dictionary.
@@ -58,12 +58,12 @@ class compliance_client:
 
         #Set the Job request parameters.
         data = {}
-        data['job_type'] = job_type
-        data['job_name'] = job_name
+        data['type'] = type
+        data['name'] = name
 
         data =  json.dumps(data)
 
-        self.job_name = job_name
+        self.name = name
         response = requests.post(self.url, data = data, auth = self.bearer_oauth, headers=self.headers)
         job_details = {}
 
@@ -76,17 +76,17 @@ class compliance_client:
         response_dict = response.json()
         job_details = response_dict['data']
 
-        job_details['job_id'] = job_details['id'] #TODO: return 'job-id' instead?
+        job_details['id'] = job_details['id']
 
         self.job_details = job_details
 
         return job_details #Passing back dictionary.
     
-    def list_job(self, job_id):
+    def list_job(self, id):
 
         job_details = {}
 
-        response = requests.get(f"{self.url}/{job_id}", auth=self.bearer_oauth, headers=self.headers)
+        response = requests.get(f"{self.url}/{id}", auth=self.bearer_oauth, headers=self.headers)
 
         if response.status_code != 200:
             print(f"Error requesting Job details: {response.status_code} | {response.text}")
@@ -96,19 +96,19 @@ class compliance_client:
 
         job_details = response_dict['data']
 
-        job_details['job_id'] = job_details['id'] #TODO: for consistency, seems this attribute should be returned as 'job_id'
+        job_details['id'] = job_details['id']
 
         return job_details
 
 
-    def list_jobs(self, job_type):
+    def list_jobs(self, type):
         """
         Return a 'data' array of job objects.
        """
         job_list = {}
 
         #Optional request parameters: status, start_time, end_time
-        response = requests.get(f"{self.url}?job_type={job_type}", auth=self.bearer_oauth, headers=self.headers)
+        response = requests.get(f"{self.url}?job_type={type}", auth=self.bearer_oauth, headers=self.headers)
 
         if response.status_code != 200:
             print(f"Error requesting Job list: {response.status_code} | {response.text}")
@@ -169,14 +169,14 @@ if __name__ == "__main__":
     
     #Create Tweet Compliance Job. User Compliance methods coming later.
     name = "Getting my archive compliant. Starting with Tweets..."
-    job_type = 'tweets'
-    job_details = client.create_tweet_compliance_job(job_type, name)
+    type = 'tweets'
+    job_details = client.create_tweet_compliance_job(type, name)
     
-    #job_details['job_id'] = '12345' #Copy your Job ID here.
+    #job_details['id'] = '12345' #Copy your Job ID here.
 
     #Look up details for a given Job ID.
-    #job_details = client.list_job(job_details['job_id'])
-    #print(f"Retreived Job details for Job ID {job_details['job_id']}: {job_details}")
+    #job_details = client.list_job(job_details['id'])
+    #print(f"Retreived Job details for Job ID {job_details['id']}: {job_details}")
 
     #Upload IDs
     #compliance_client.ids_file_path = "../inbox/tweet_ids.txt"

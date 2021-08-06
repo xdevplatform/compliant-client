@@ -2,11 +2,11 @@
 compliant-client.py
 
 Usage:
-    compliant-client --all --job-type <job-type> --name <name> --ids-file <ids-file> --results-file <results-file>
-    compliant-client --create --job-type <job-type> --name <name>
+    compliant-client --all --type <type> --name <name> --ids-file <ids-file> --results-file <results-file>
+    compliant-client --create --type <job-type> --name <name>
     #Not sure how to plug in job-type into this 'super' method that does both id and all lists...
-    #Client will return both Tweet and User jobs if job-type is not specified.
-    compliant-client --list [--job-type <job-type> | --name <name> | --id <id> | --status <status>]
+    #Client will return both Tweet and User jobs if type is not specified.
+    compliant-client --list [--type <type> | --name <name> | --id <id> | --status <status>]
     compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
     compliant-client --download (--name <name> | --id <id>) --results-file <results-file>
     compliant-client --help
@@ -19,7 +19,7 @@ Options:
     -s --status STATUS
     -u --upload
     -d --download
-    -t --job-type JOBTYPE
+    -t --type TYPE
     -n --name NAME
     -i --id ID
     -f --ids-file IDSFILE
@@ -101,21 +101,21 @@ def handle_input(arguments):
 
     return settings
 
-def is_job_name_unique(job_type, job_name):
+def is_job_name_unique(type, name):
     #TODO: check both types and comapre with combined list?
-    job_list = list_jobs(job_type)
+    job_list = list_jobs(type)
     for job in job_list:
-        if job['job_name'] == job_name:
+        if job['name'] == name:
             return False
     return True
 
-def create_job(job_type, job_name):
+def create_job(type, name):
     job_details = {}
 
-    if is_job_name_unique(job_type, job_name):
-        job_details = compliance_client.create_tweet_compliance_job(job_type, job_name)
+    if is_job_name_unique(type, name):
+        job_details = compliance_client.create_tweet_compliance_job(type, name)
     else:
-        print(f"This client script requires that Job names be unique. A Job with name '{job_name}' already exists.")
+        print(f"This client script requires that Job names be unique. A Job with name '{name}' already exists.")
 
     return job_details
 
@@ -129,25 +129,25 @@ def download_results(download_url, results_file):
     success = compliance_client.download_results(download_url, results_file)
     return success
 
-def list_jobs(job_type):
-    jobs_list = compliance_client.list_jobs(job_type)
+def list_jobs(type):
+    jobs_list = compliance_client.list_jobs(type)
     return jobs_list
 
 def list_job(id):
     job_details = compliance_client.list_job(id)
     return job_details
 
-def do_all(job_type, job_name, ids_file, results_file):
+def do_all(type, name, ids_file, results_file):
     #This is a chatty method, and may benefit from a verbose/quiet setting.
 
     begin_dt = datetime.now() #Timing how long the process takes.
 
-    job_details = create_job(job_type, job_name) #Create Tweet Compliance Job.
+    job_details = create_job(type, name) #Create Tweet Compliance Job.
 
     if len(job_details) == 0: #No Job details returned? Something went wrong.
         print(f"Compliance Job could not be created.")
     else:
-        print(f"New Compliance Job named '{job_name}' created.")
+        print(f"New Compliance Job named '{name}' created.")
 
         start = time.time()
         success =  upload_ids(ids_file, job_details['upload_url'])
@@ -165,7 +165,7 @@ def do_all(job_type, job_name, ids_file, results_file):
             if job_details['status'] == 'complete':
                 break
             time.sleep(SLEEP_INTERVAL)
-            print(f"Checking status of '{job_details['job_name']}' with Job ID {job_details['job_id']}.")
+            print(f"Checking status of '{job_details['name']}' with Job ID {job_details['id']}.")
 
         duration = '%.1f' % ((time.time() - start)/60)
         print(f"Compliance Job took {duration} minutes to complete.")
@@ -182,7 +182,7 @@ def list_by_status(settings):
     print(f"Making request for Jobs list to match on Job that are: '{settings['status']}'.")
     jobs = []
 
-    if not 'job-type' in settings.keys():
+    if not 'type' in settings.keys():
 
         #Get Tweet jobs
         jobs_list = list_jobs('tweets')
@@ -191,7 +191,7 @@ def list_by_status(settings):
         jobs_list = jobs_list + list_jobs('users')
 
     else:
-        jobs_list = list_jobs(settings['job-type'])
+        jobs_list = list_jobs(settings['type'])
 
     if settings['status'] == 'complete':
         for job in jobs_list:
@@ -242,11 +242,11 @@ if __name__ == "__main__":
 
     if settings['mode'] == 'all':
 
-        do_all(settings['job-type'], settings['name'], settings['ids-file'], settings['results-file'])
+        do_all(settings['type'], settings['name'], settings['ids-file'], settings['results-file'])
 
     if settings['mode'] == 'create':
         #Create Tweet Compliance Job.
-        job_details = create_job(settings['job-type'], settings['name'])
+        job_details = create_job(settings['type'], settings['name'])
 
         if len(job_details) == 0:
             print(f"Compliance Job could not be created.")
@@ -265,8 +265,8 @@ if __name__ == "__main__":
             print(f"Current User Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
 
         if 'job-type' in settings.keys() and not 'status' in settings.keys():
-            print(f"Making request for list of Jobs of type {settings['job-type']}")
-            jobs_list = list_jobs(settings['job-type'])
+            print(f"Making request for list of Jobs of type {settings['type']}")
+            jobs_list = list_jobs(settings['type'])
             print(f"Current User Compliance Jobs: \n {json.dumps(jobs_list, indent=4, sort_keys=True)}")
 
         if 'name' in settings.keys() and not 'status' in settings.keys():
@@ -274,14 +274,14 @@ if __name__ == "__main__":
             print(f"Making request for Jobs list to look up Job with name '{settings['name']}'.")
             jobs_list = list_jobs('tweets')
             for job in jobs_list:
-                if 'job_name' in job.keys():
-                    if job['job_name'] == settings['name']:
+                if 'name' in job.keys():
+                    if job['name'] == settings['name']:
                         jobs.append(job)
 
             jobs_list = list_jobs('users')
             for job in jobs_list:
-                if 'job_name' in job.keys():
-                    if job['job_name'] == settings['name']:
+                if 'name' in job.keys():
+                    if job['name'] == settings['name']:
                         jobs.append(job)
 
             print(json.dumps(jobs, indent=4, sort_keys=True))
