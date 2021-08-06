@@ -53,7 +53,7 @@ def handle_input(arguments):
 
     if arguments['--all'] == True:
         settings['mode'] = 'all'
-        settings['job-type'] = arguments['--job-type']
+        settings['type'] = arguments['--type']
         settings['name'] = arguments['--name']
         settings['ids-file'] = arguments['--ids-file']
         settings['results-file'] = arguments['--results-file']
@@ -61,7 +61,7 @@ def handle_input(arguments):
 
     if arguments['--create'] ==  True:
         settings['mode'] = 'create'
-        settings['job-type'] = arguments['--job-type']
+        settings['type'] = arguments['--type']
         settings['name'] = arguments['--name']
 
     if arguments['--list'] == True:
@@ -72,8 +72,8 @@ def handle_input(arguments):
         if arguments['--id'] != None:
             settings['id'] = arguments['--id']
 
-        if arguments['--job-type'] != None:
-            settings['job-type'] = arguments['--job-type']
+        if arguments['--type'] != None:
+            settings['type'] = arguments['--type']
 
         if arguments['--status'] != None:
             settings['status'] = arguments['--status']
