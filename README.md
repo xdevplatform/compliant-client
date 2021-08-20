@@ -1,15 +1,19 @@
 # The Compliant (Python) client
 
-**tl;dr** This repository provides both simple scripts and a more elaborate *client* for working with the "batch Compliance" endpoint.
-
-Status: getting new User functionality now that that update has been made. Using this README to help design new features.
-
-
+**tl;dr** This repository provides both simple scripts and a more elaborate *client* for working with the "batch 
+Compliance" endpoints. There is a simple script for each of the 5 stages of managing a Job life-cycle, while the 
+client automates a Compliance Job's life-cycle, from creating a Job to downloading the results.
 
 ## Introduction
 
+This repository contains Python code for working with the Twitter Batch Compliance endpoints. To learn more about these 
+endpoints, check out their documentation at: {link}
+
 ### Simple scripts
-This repository hosts a set of simple Python scripts (in the ./scripts folder) for the Compliance endpoints. These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
+This repository hosts a set of simple Python scripts (in the ./scripts folder) for the Compliance endpoints. These 
+scripts support a simple command line interface.  
+
+These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
 1) Create a Compliance Job.
 2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events related to them.
 3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed.
@@ -23,26 +27,27 @@ There is also a more elaborate example 'compliant-client' script that helps mana
 The 'apps/compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
 a specified User ID or Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
 
-When making an 'all' command, you need to specify a Job name, the path to the IDs file for uploading, and the path to 
-file where you want the results written. 
+When making an 'all' command, you need to specify the Job type, a Job name, the path to the IDs file for uploading, and the path to 
+file where you want the results written. The Batch Compliance endpoints support two types of Compliance requests, one for Tweet Compliance 
+events, and one for User Compliance events.
 
 Here is an example command-line for uploading a Tweet ID file, monitoring a Job's progress, and writing the downloaded results to a local file:   
 
 ```bash
-$python apps/compliant-client.py --all --name "CheckingTweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/tweet_results.json"
+$python apps/compliant-client.py --all --type tweets --name "Checking Tweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/tweet_results.json"
 ```
 Here's an example client command-line for working with a User ID file:  
 
 ```bash
-$python apps/compliant-client.py --all --name "CheckingUsers" --ids-file "../inbox/user_ids.txt" --results-file "../outbox/user_results.json"
+$python apps/compliant-client.py --all --type users --name "Checking Users" --ids-file "../inbox/user_ids.txt" --results-file "../outbox/user_results.json"
 ```
-
  
 ## Getting started
 
-The first step when starting with the batch Compliance endpoint, is establishing access and generating the authentication 
-tokens needed to make requests. You will assign a Twitter App to make your requests, and that App's consumer and access 
-tokens are used to authenticate with an OAuth 1.0a.  
+The first step when starting with the batch Compliance endpoint is establishing access and generating the authentication 
+token needed to make requests. You will need to have an approved developer account and have access to the Twitter Developer Portal.
+
+You will need to have a Twitter App, and have its Bearer Token on-hand to start making requests. 
 
 The simple scripts and the example client share common code that imports tokens from the local os environment/session. 
 See the "Setting up authentication" section below for more details.
@@ -51,8 +56,12 @@ Other steps for preparing to use the batch Compliance endpoint include:
 
    + Preparing Tweet and User ID files. IDs should be in simple text with one ID per line. When uploading 
    the files, a 'Content-Type' header should be set to 'text/plain'. See below for an example. 
-   + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update your archives accordingly. This may take the form of making database deletes or writing new file data files. 
+   + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update 
+     your archives accordingly. This may take the form of making database deletes, deleting stored JSON files, or writing new file data files. 
  
+## Setting up authentication
+
+
 ## Job attributes and lifecycles 
  
 Compliance Jobs have a lifecycle, from being created, having Twitter IDs assigned, a period of time while the results are generated, to generating a file containing JSON that describes Compliance events associated with submitted IDs. When a Job is created, locations for uploading IDs and downloading results are provided. When Twitter IDs are uploaded, the process of checking each ID for Compliance events starts. This process will take many minutes (depending on the number of IDs submitted). After the job completes, the results can be download for post-processing. The results have the form of JSON that descibes the type of Compliance event that took place.  
