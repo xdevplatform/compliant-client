@@ -57,18 +57,22 @@ Other steps for preparing to use the batch Compliance endpoint include:
    + Preparing Tweet and User ID files. IDs should be in simple text with one ID per line. When uploading 
    the files, a 'Content-Type' header should be set to 'text/plain'. See below for an example. 
    + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update 
-     your archives accordingly. This may take the form of making database deletes, deleting stored JSON files, or writing new file data files. 
- 
-## Setting up authentication
-
+     your archives accordingly. This may take the form of making database deletes, deleting stored JSON files, or 
+     writing new file data files. 
 
 ## Job attributes and lifecycles 
  
-Compliance Jobs have a lifecycle, from being created, having Twitter IDs assigned, a period of time while the results are generated, to generating a file containing JSON that describes Compliance events associated with submitted IDs. When a Job is created, locations for uploading IDs and downloading results are provided. When Twitter IDs are uploaded, the process of checking each ID for Compliance events starts. This process will take many minutes (depending on the number of IDs submitted). After the job completes, the results can be download for post-processing. The results have the form of JSON that descibes the type of Compliance event that took place.  
+Compliance Jobs have a lifecycle, from being created, having Twitter IDs assigned, a period of time while the results 
+are generated, to generating a file containing JSON that describes Compliance events associated with submitted IDs. 
+When a Job is created, URLs for uploading IDs and downloading results from are provided. When Twitter IDs are uploaded, 
+the process of checking each ID for Compliance events starts. This process will take many minutes (depending on the 
+number of IDs submitted). After the job completes, the results can be download for post-processing. The results have the 
+form of JSON that describes the type of Compliance event that took place.  
 
 Let's dig into some of the details... 
 
-* Job are created with an optional (and recommended) name. The 'create' process creates a new job with the following attributes:
+* Job are created with an optional (and recommended) name. The 'create' process creates a new job with the following 
+  attributes:
  
 ```json
 {
@@ -79,9 +83,12 @@ Let's dig into some of the details...
     "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/12345678888888/submission..."
 }
 ```
-These Job details include an URL for uploading your ID. There is also an expiration time for that URL. Once a Job is created the upload link is available for 15 minutes. If the link expires before you upload the IDs, a new Job will need to be created. 
+These Job details include an URL for uploading your ID. There is also an expiration time for that URL. Once a Job is 
+created the upload link is available for 15 minutes. If the link expires before you upload the IDs, a new Job will need 
+to be created. 
  
-* Tweet and User IDs are uploaded to a cloud file system. The IDs are written to a simple text file with one ID per line. Below is an example for a set of Tweet IDs, and the format is identical for User Ids. 
+* Tweet and User IDs are uploaded to a cloud file system. The IDs are written to a simple text file with one ID per line. 
+  Below is an example for a set of Tweet IDs, and the format is identical for User Ids. 
 
 #### Tweet ID file 
 
@@ -131,7 +138,7 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
 
 ## Compliance results objects  
   
-  Here is an example for a Tweet Complaince event:
+  Here is an example for a Tweet Compliance event:
   
   ```json
   {
@@ -143,7 +150,7 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
   }
  ``` 
 
-Here is an example for a User Complaince event:
+Here is an example for a User Compliance event:
 
   ```json
   {
@@ -156,21 +163,18 @@ Here is an example for a User Complaince event:
 To set your enviornment variables in your terminal run the following lines to load your tokens into these environmental variables. Note that there variables are session-specific, so if you stop and restart a terminal these will need to be reloaded unless you auto-load them or persist them somehow. 
 
 ```bash
-export 'API_KEY'='<your_api_key>'
-export 'API_SECRET'='<your_api_secret>'
-export 'API_TOKEN'='<your_api_token>'
-export 'API_TOKEN_SECRET'='<your_api_token_secret>'
+export 'BEARER_TOKEN'='<your_api_key>'
 ```
 
 A quick way to test your authentication is to make a request for the current "list Jobs." 
 
 
 ```bash
-$python ./scripts/list_jobs.py
+$python ./scripts/list_jobs.py --type tweets
 ```
 
 ```bash
-$python ./apps/compliant-client.py --list
+$python ./apps/compliant-client.py --list --type tweets
 ```
 
 
@@ -178,18 +182,20 @@ The example scripts and example client code includes this common code that loads
 
 ```python
 import requests
-from requests_oauthlib import OAuth1
 import os
 
-def authenticate():
-    api_key = os.environ.get("API_KEY")
-    api_secret = os.environ.get("API_SECRET")
-    api_token = os.environ.get("API_TOKEN")
-    api_token_secret = os.environ.get("API_TOKEN_SECRET")
+def bearer_oauth(self, r):
+    # To set your environment variables in your terminal run the following line:
+    # export 'BEARER_TOKEN'='<your_bearer_token>'
+    bearer_token = os.environ.get("BEARER_TOKEN")
+    r.headers['Authorization'] =  "Bearer {}".format(bearer_token)
 
-    auth = OAuth1(api_key, api_secret, api_token, api_token_secret)
+    return r
 
-    return auth
+URL = 'https://api.twitter.com/2/compliance/jobs'
+headers = {}
+response = requests.get(f"{URL}/{id}", auth=bearer_oauth, headers=headers)
+
 ```
 
 
@@ -200,13 +206,21 @@ def authenticate():
 The /scripts folder contains a set of Python scripts for the compliance endpoints. These scripts can be used to create 
 and manage Compliance Jobs and their lifecycles:
 
-These scripts all include a 'main' section that includes some hardcoded settings such as a Job's name or ID. 
+These scripts all support command-line arguments for passing in settings when creating a Job, or when listing Jobs. Here
+is an example for the list_job.py script. 
 
 ```python
 if __name__ == "__main__":
-    name = "My example job."
-    job_details = create_tweet_compliance_job(name)
-    print(f"Created Job {job_details['job_id']}: Details: {job_details}")
+
+    arguments = docopt(__doc__, version='v1.0')
+
+    job_details = list_job(arguments['--id'])
+
+    if len(job_details) == 0:
+        print(f"Compliance Job not found or error occurred.")
+    else:
+        print(f"Job details for ID {job_details['id']}:")
+        print(json.dumps(job_details, indent=4, sort_keys=True))
 ```
 There are five scripts:
   1) **create_job.py** Creating a Job: 
@@ -224,52 +238,67 @@ The commannd-line supports the following commands (these are displayed with the 
 
 ```
 compliant-client.py
+
 Usage:
-    compliant-client --all --name <name> --ids-file <ids-file> --results-file <results-file>
-    compliant-client --create --name <name>
-    compliant-client --list [--name <name> | --id <id> | --status <status>]
+    compliant-client --all --type <type> --name <name> --ids-file <ids-file> --results-file <results-file>
+    compliant-client --create --type <job-type> --name <name>
+    #Not sure how to plug in job-type into this 'super' method that does both id and all lists...
+    #Client will return both Tweet and User jobs if type is not specified.
+    compliant-client --list [--type <type> | --name <name> | --id <id> | --status <status>]
     compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
     compliant-client --download (--name <name> | --id <id>) --results-file <results-file>
     compliant-client --help
     compliant-client --version
+
 Options:
     -a --all
     -c --create
     -l --list
-    -s --status
+    -s --status STATUS
     -u --upload
     -d --download
-    -n --name
-    -i --id
-    -f --ids-file
-    -r --results-file
+    -t --type TYPE
+    -n --name NAME
+    -i --id ID
+    -f --ids-file IDSFILE
+    -r --results-file RESULTSFILE
     -h --help
     -v --version
 ```    
 
 ### Example calls
 
-Here are some example command, and illustrate how to manage a Job from creation to downloading results.
+Here are some example commands, and illustrate how to manage a Job from creation to downloading results.
  
+This will create a new Tweets compliance Job, and apply the name "MyTweetsJob." Assigning a name will enable you to 
+manage Jobs by that name instead of its ID. That can be a nice convenience. 
 ```bash
-$python compliant-client.py --create --name "MyJob"
-``` 
- 
-```bash
-$python compliant-client.py --list
+$python compliant-client.py --create --type tweets --name "MyTweetsJob"
 ``` 
 
+This will list the status of all Tweets Jobs.  
 ```bash
-$python compliant-client.py --upload --name "MyJob" --ids-file "./inbox/tweet_ids.txt"
+$python compliant-client.py --list --type tweets
 ``` 
 
+You can also look up a Job status by name. 
 ```bash
-$python compliant-client.py --download --name "MyJob" --results-file "./oubox/results.txt"
+$python compliant-client.py --list --name "MyTweetsJob"
+``` 
+
+This command will upload the Tweet IDs for the Job named "MyTweetsJob".
+```bash
+$python compliant-client.py --upload --name "MyTweetsJob" --ids-file "./inbox/tweet_ids.txt"
+``` 
+
+When the Job is finished, this will download the results for the Job named "MyTweetsJob" to the file specified. 
+```bash
+$python compliant-client.py --download --name "MyTweetsJob" --results-file "./oubox/results.txt"
 ``` 
  
-
+If you want to make a single 'all' call, the script will manage the Job from creation to downloading the results: 
 ```bash
-$pythomcompliant-client.py --all --name "MyJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+$pythomcompliant-client.py --all --name "MyTweetsJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
 ``` 
 
 
