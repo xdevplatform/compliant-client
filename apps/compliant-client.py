@@ -3,12 +3,10 @@ compliant-client.py
 
 Usage:
     compliant-client --all --type <type> --name <name> --ids-file <ids-file> --results-file <results-file>
-    compliant-client --create --type <job-type> --name <name>
-    #Not sure how to plug in job-type into this 'super' method that does both id and all lists...
-    #Client will return both Tweet and User jobs if type is not specified.
+    compliant-client --create --type <type> --name <name>
     compliant-client --list [--type <type> | --name <name> | --id <id> | --status <status>]
-    compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
-    compliant-client --download (--name <name> | --id <id>) --results-file <results-file>
+    compliant-client --upload --type <type> (--name <name> | --id <id>) --ids-file <ids-file>
+    compliant-client --download --type <type> (--name <name> | --id <id>) --results-file <results-file>
     compliant-client --help
     compliant-client --version
 
@@ -82,7 +80,7 @@ def handle_input(arguments):
 
     if arguments['--upload'] == True:
         settings['mode'] = 'upload'
-
+        settings['type'] = arguments['--type']
         settings['ids-file'] = arguments['--ids-file']
 
         if arguments['--id'] != None:
@@ -92,6 +90,7 @@ def handle_input(arguments):
 
     if arguments['--download'] == True:
         settings['mode'] = 'download'
+        settings['type'] = arguments['--type']
         settings['results-file'] = arguments['--results-file']
 
         if arguments['--id'] != None:
@@ -301,29 +300,42 @@ if __name__ == "__main__":
 
         print("Making 'list Jobs' request...")
 
+        #Supporting the 'feature' that a Job type is not needed to upload IDs?
+        #Assuming unique names (which this client enforces) and IDs (backend assumption), all we need is either a name
+        # or ID, and we can know which Job is being referenced by user.
+
         #Uploading Job by name or ID.
         if 'name' in settings:
-            job_list = list_jobs()
+            job_list = list_jobs(settings['type'])
             for job in job_list:
                 if 'name' in job.keys():
                     job_details = list_job(job['id'])
         elif 'id' in settings:
             job_details = list_job(settings['id'])
 
-        success = upload_ids(settings['ids-file'], job_details['upload_url'])
-
-        if success:
-            print(f"Successfully uploaded the {settings['ids-file']} Tweet ID file.")
+        #Before we try the upload, we should inspect the upload URL expiration. If that has expired, then the status is
+        # 'expired'
+        if job_details['status'] == 'expired':
+            print(f"Upload link expired at {job_details['upload_expires_at']}. Not attempting upload of {settings['ids-file']}  ")
         else:
-            print("Error uploading Tweet IDs file.")
+            success = upload_ids(settings['ids-file'], job_details['upload_url'])
+
+            if success:
+                print(f"Successfully uploaded the {settings['ids-file']} Tweet ID file.")
+            else:
+                print("Error uploading Tweet IDs file.")
 
     if settings['mode'] == 'download':
 
         print("Making 'list Jobs' request...")
 
+        #Supporting the 'feature' that a Job type is not needed to download results?
+        #Assuming unique names (which this client enforces) and IDs (backend assumption), all we need is either a name
+        # or ID, and we can know which Job is being referenced by user.
+
         #Downloading Job by name or ID.
         if 'name' in settings:
-            job_list = list_jobs()
+            job_list = list_jobs(settings['type'])
             for job in job_list:
                 if 'name' in job.keys():
                     job_details = list_job(job['id'])

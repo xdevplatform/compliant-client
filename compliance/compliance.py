@@ -108,7 +108,7 @@ class compliance_client:
         job_list = {}
 
         #Optional request parameters: status, start_time, end_time
-        response = requests.get(f"{self.url}?job_type={type}", auth=self.bearer_oauth, headers=self.headers)
+        response = requests.get(f"{self.url}?type={type}", auth=self.bearer_oauth, headers=self.headers)
 
         if response.status_code != 200:
             print(f"Error requesting Job list: {response.status_code} | {response.text}")
