@@ -4,12 +4,19 @@
 Compliance" endpoints. There is a simple script for each of the 5 stages of managing a Job life-cycle, while the 
 client automates a Compliance Job's life-cycle, from creating a Job to downloading the results.
 
-## Introduction
++ [Introduction](#intro)
+  + [Simple scripts](#simple)
+  + [Example client](#client)
++ [Getting Started](#starting)
+  + [Python packages](#packages)
+  + [Setting up authentication](#auth)  
+
+## Introduction <a id="intro" class="tall">&nbsp;</a>
 
 This repository contains Python code for working with the Twitter Batch Compliance endpoints. To learn more about these 
-endpoints, check out their documentation at: {link}
+endpoints, check out the [Batch compliance documentation](https://developer.twitter.com/en/docs/twitter-api/compliance/batch-compliance/introduction).
 
-### Simple scripts
+### Simple scripts <a id="simple" class="tall">&nbsp;</a>
 This repository hosts a set of simple Python scripts (in the ./scripts folder) for the Compliance endpoints. These 
 scripts support a simple command line interface.  
 
@@ -21,7 +28,7 @@ These five scripts map to the fundamental methods that are called on the new Com
    start of procoessing. 
 5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which User accounts have updates, or some other Compliance event such as geo-scrubbing. 
 
-### Example client
+### Example client <a id="client" class="tall">&nbsp;</a>
 
 There is also a more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
 For example, the 'apps/compliant-client.py' script enables you to manage Jobs by name and not just ID. More interestingly, 
@@ -43,7 +50,7 @@ Here's an example client command-line for working with a User ID file:
 $python apps/compliant-client.py --all --type users --name "Checking Users" --ids-file "../inbox/user_ids.txt" --results-file "../outbox/user_results.json"
 ```
  
-## Getting started
+## Getting started <a id="starting" class="tall">&nbsp;</a>
 
 The first step when starting with the batch Compliance endpoint is establishing access and generating the authentication 
 token needed to make requests. You will need to have an approved developer account and have access to the Twitter 
@@ -59,7 +66,7 @@ So far, a package has not been generated for this project. To start working with
 cloned in your environment. Currently, there is not any configuration file needed, and the only 'configuration' needed is 
 setting up of a "BEARER_TOKEN" environment variable. 
 
-### Python packages
+### Python packages <a id="packages" class="tall">&nbsp;</a>
 The scripts and example app import the following Python Packages:
 * requests
 * json
@@ -75,6 +82,47 @@ Other steps for preparing to use the batch Compliance endpoint include:
    + Build methods to import and update Tweet archives. Once the Compliance results are downloaded, code is needed to update 
      your archives accordingly. This may take the form of making database deletes, deleting stored JSON files, or 
      writing new file data files. 
+
+### Setting up authentication <a id="auth" class="tall">&nbsp;</a>
+
+To set your enviornment variables in your terminal run the following lines to load your tokens into these environmental 
+variables. Note that there variables are session-specific, so if you stop and restart a terminal these will need to be 
+reloaded unless you auto-load them or persist them somehow.
+
+```bash
+export 'BEARER_TOKEN'='<your_bearer_token_key>'
+```
+
+A quick way to test your authentication is to make a request for the current "list Jobs."
+
+```bash
+$python ./scripts/list_jobs.py --type tweets
+```
+
+```bash
+$python ./apps/compliant-client.py --list --type tweets
+```
+
+The example scripts and example client code includes this common code that loads these tokens in from the local environment:
+
+```python
+import requests
+import os
+
+def bearer_oauth(self, r):
+    # To set your environment variables in your terminal run the following line:
+    # export 'BEARER_TOKEN'='<your_bearer_token>'
+    bearer_token = os.environ.get("BEARER_TOKEN")
+    r.headers['Authorization'] =  "Bearer {}".format(bearer_token)
+
+    return r
+
+URL = 'https://api.twitter.com/2/compliance/jobs'
+headers = {}
+response = requests.get(f"{URL}/{id}", auth=bearer_oauth, headers=headers)
+
+```
+
 
 ## Job attributes and lifecycles 
  
@@ -193,45 +241,6 @@ Here is an example for a User Compliance event:
 Other reasons include: "deleted" and "suspended"
 
 
-## Setting up authentication
-
-To set your enviornment variables in your terminal run the following lines to load your tokens into these environmental variables. Note that there variables are session-specific, so if you stop and restart a terminal these will need to be reloaded unless you auto-load them or persist them somehow. 
-
-```bash
-export 'BEARER_TOKEN'='<your_api_key>'
-```
-
-A quick way to test your authentication is to make a request for the current "list Jobs." 
-
-
-```bash
-$python ./scripts/list_jobs.py --type tweets
-```
-
-```bash
-$python ./apps/compliant-client.py --list --type tweets
-```
-
-
-The example scripts and example client code includes this common code that loads these tokens in from the local environment: 
-
-```python
-import requests
-import os
-
-def bearer_oauth(self, r):
-    # To set your environment variables in your terminal run the following line:
-    # export 'BEARER_TOKEN'='<your_bearer_token>'
-    bearer_token = os.environ.get("BEARER_TOKEN")
-    r.headers['Authorization'] =  "Bearer {}".format(bearer_token)
-
-    return r
-
-URL = 'https://api.twitter.com/2/compliance/jobs'
-headers = {}
-response = requests.get(f"{URL}/{id}", auth=bearer_oauth, headers=headers)
-
-```
 
 
 
