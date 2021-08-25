@@ -12,7 +12,6 @@ Options:
 from docopt import docopt #The above comment defines the arguments this script supports.
 
 import requests
-import json
 
 def upload_ids(ids_file_path, url):
     success = False

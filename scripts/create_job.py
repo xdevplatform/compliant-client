@@ -55,8 +55,6 @@ def create_tweet_compliance_job(type, name):
     headers = {}
     headers['Content-type'] = 'application/json'
     headers['User-Agent'] = "BatchCompliancePythonScript"
-    #TODO: remove!
-    headers['x-des-apiservices'] = 'staging1'
 
     #Set the Job request parameters.
     data = {}

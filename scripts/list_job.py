@@ -12,7 +12,6 @@ Options:
 from docopt import docopt #The above comment defines the arguments this script supports.
 
 import requests
-from requests_oauthlib import OAuth1
 import os
 import json
 
@@ -36,8 +35,7 @@ def list_job(id):
     job_details = {}
 
     headers = {}
-    #TODO: remove!
-    headers['x-des-apiservices'] = 'staging1'
+    headers['User-Agent'] = "BatchCompliancePythonScript"
 
     response = requests.get(f"{URL}/{id}", auth=bearer_oauth, headers=headers)
 

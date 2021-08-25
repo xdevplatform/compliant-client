@@ -11,7 +11,6 @@ Options:
 from docopt import docopt #The above comment defines the arguments this script supports.
 
 import requests
-from requests_oauthlib import OAuth1
 import os
 import json
 
@@ -35,8 +34,7 @@ def list_jobs(type):
     job_list = {}
 
     headers = {}
-    #TODO: remove!
-    headers['x-des-apiservices'] = 'staging1'
+    headers['User-Agent'] = "BatchCompliancePythonScript"
 
     #Injecting Job type into the request...
     response = requests.get(f"{URL}?job_type={type}", auth=bearer_oauth, headers=headers)
