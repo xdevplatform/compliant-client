@@ -31,13 +31,17 @@ These five scripts map to the fundamental methods that are called on the new Com
 1) Create a Compliance Job: ```create_job.py``` 
 2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events 
    related to them: ```upload_ids.py```
-
-Note: Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing.
-
 3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed: ```list_job.py```
 4) Request the status of all "active" Jobs: ```list_jobs.py``` 
 5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which 
    User accounts have updates, or some other Compliance event such as geo-scrubbing: ```download_results.py``` 
+
+**Some important notes!**
+  * Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing.
+  * The provided upload URL expires in 15 minutes. If the upload URL expires before you get the IDs uploaded, you will 
+need to create a new Job.
+  * The download URL expires one week after the Job is created. Be sure to download all of your results within 7 days
+of creating the Job. 
 
 ### Example client <a id="client" class="tall">&nbsp;</a>
 
