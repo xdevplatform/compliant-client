@@ -17,21 +17,22 @@ These five scripts map to the fundamental methods that are called on the new Com
 1) Create a Compliance Job.
 2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events related to them.
 3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed.
-4) Request the status of all "active" Jobs. Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing. 
+4) Request the status of all "active" Jobs. Only one Job at a time can be running, and uploading an ID file triggers the 
+   start of procoessing. 
 5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which User accounts have updates, or some other Compliance event such as geo-scrubbing. 
 
 ### Example client
 
 There is also a more elaborate example 'compliant-client' script that helps manage Compliance Jobs and their lifecycles. 
-
-The 'apps/compliant-client.py' script lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
+For example, the 'apps/compliant-client.py' script enables you to manage Jobs by name and not just ID. More interestingly, 
+this client code lets you provide all that is needed in one "all" command. The script creates a new Job, uploads
 a specified User ID or Tweet ID file, checks on the Job status every 30 seconds, then downloads the results when the Job completes.  
 
 When making an 'all' command, you need to specify the Job type, a Job name, the path to the IDs file for uploading, and the path to 
 file where you want the results written. The Batch Compliance endpoints support two types of Compliance requests, one for Tweet Compliance 
 events, and one for User Compliance events.
 
-Here is an example command-line for uploading a Tweet ID file, monitoring a Job's progress, and writing the downloaded results to a local file:   
+Here is an example command-line for creating a Job, uploading a Tweet ID file, monitoring a Job's progress, and writing the downloaded results to a local file:   
 
 ```bash
 $python apps/compliant-client.py --all --type tweets --name "Checking Tweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/tweet_results.json"
@@ -45,12 +46,27 @@ $python apps/compliant-client.py --all --type users --name "Checking Users" --id
 ## Getting started
 
 The first step when starting with the batch Compliance endpoint is establishing access and generating the authentication 
-token needed to make requests. You will need to have an approved developer account and have access to the Twitter Developer Portal.
+token needed to make requests. You will need to have an approved developer account and have access to the Twitter 
+Developer Portal. You will need to have a Twitter App, and have its Bearer Token on-hand to start making requests. Bearer 
+Tokens can be generated in the Developer Portal (yay!). Authentication tokens are only displayed on the Developer Portal
+once (when generated), so be ready to save those tokens in a secure place. 
 
-You will need to have a Twitter App, and have its Bearer Token on-hand to start making requests. 
+The simple scripts and the example client share common code that imports your Bearer Token from the local os 
+environment/session (this client was developed on the MacOS. If you are on Windows you may want to update how Tokens are 
+managed). See the "Setting up authentication" section below for more details.
 
-The simple scripts and the example client share common code that imports tokens from the local os environment/session. 
-See the "Setting up authentication" section below for more details.
+So far, a package has not been generated for this project. To start working with the client code, the repository can be 
+cloned in your environment. Currently, there is not any configuration file needed, and the only 'configuration' needed is 
+setting up of a "BEARER_TOKEN" environment variable. 
+
+### Python packages
+The scripts and example app import the following Python Packages:
+* requests
+* json
+* os
+* docopt (A package that converts simple header documentation into a set of command-line parameters, options, and switches.)
+
+... and that's it!
 
 Other steps for preparing to use the batch Compliance endpoint include: 
 
@@ -63,24 +79,32 @@ Other steps for preparing to use the batch Compliance endpoint include:
 ## Job attributes and lifecycles 
  
 Compliance Jobs have a lifecycle, from being created, having Twitter IDs assigned, a period of time while the results 
-are generated, to generating a file containing JSON that describes Compliance events associated with submitted IDs. 
+are generated, to having a file to download that contains JSON that describes Compliance events associated with submitted IDs. 
+
 When a Job is created, URLs for uploading IDs and downloading results from are provided. When Twitter IDs are uploaded, 
 the process of checking each ID for Compliance events starts. This process will take many minutes (depending on the 
-number of IDs submitted). After the job completes, the results can be download for post-processing. The results have the 
+number of IDs submitted). After the job completes, the results can be downloaded for post-processing. The results have the 
 form of JSON that describes the type of Compliance event that took place.  
 
 Let's dig into some of the details... 
 
-* Job are created with an optional (and recommended) name. The 'create' process creates a new job with the following 
+* Job are created with an optional (and recommended) name. 
+  
+The 'create' process creates a new job with the following 
   attributes:
  
 ```json
 {
-    "id": "12345678888888",
-    "name": "ArchivedTweets_2017_09",
-    "status": "created",
-    "upload_expires_at": "YYYY-MM-DDTHH:mm:ss.000Z",
-    "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/12345678888888/submission..."
+  "created_at": "2021-08-25T00:21:54.000Z",
+  "download_expires_at": "2021-09-01T00:21:54.000Z",
+  "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1430324519596564483/delivery/992443111073660928_1430324519596564483?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=complianceapi-public-svc-acct%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210825%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210825T002154Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=4066eea9ff73d297d5f51ac6f1260540bd8656b473f33e2cc0925afe9c58c8bc66c6c8a501a059ee90bc3c78144c1b32ea774660a3672f33e44c0083f2c9da3ff7fcf6efd8499e158733b81fb9ad9e3f91144d988d903404f5e3718f37719627014fe34b1b4fd7af41ca76393e0a6564cdd03b1cb1aa3d385a639940f9e52f6b5f3d9e5d023a55811bbbed6e5b54e077a2d413a392afd5088b3906ce3d40162f4ca4f62b26e363f70a57ea252594b091e6a50480753f9a528f6bd1c7890883b66b55750220e45fff8aa64067cf08c390517b597d4d80d759c124be5352446e57f9b57dcf3c070bee913cd6140897485a6eabd92157faee46f857f1939931c0f9",
+  "id": "1430324519596564483",
+  "name": "Checking my stored Tweets",
+  "resumable": false,
+  "status": "created",
+  "type": "tweets",
+  "upload_expires_at": "2021-08-25T00:36:54.000Z",
+  "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1430324519596564483/submission/992443111073660928_1430324519596564483?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=complianceapi-public-svc-acct%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210825%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210825T002154Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=c20ecee2fea6e4ada2cb04f08b3350b039d9a608dd343b9c1ac2a003d2c26e6abac7546a5589bc3146d87b3e9e6023309c96bb9cddf96f8281e2a17fa63fdd8f711a997317c4be6dfead08d728b48381f4d95e515d01b91066aa4eb0c876bcd12195d2521ec2720c8e92d2830ae4ef17340c4fb92c58203f05bef9474d8d91404f48eff41b3b04adb662668eecd14b4ccc848d4d0e7df690a48e5befca081e0ce429a4387ba763a47bec7e88a3a57fdb2b97f7a2a04294aaafe102d9704dce62967e2a85c6c3170c689a8ba8f079afaf63ba850846aadd4ef7a99a7f67e0c05bf65a628809af79251b31051e8a785e262c28b81f2b3aa2839adaf1f5d078e9c2"
 }
 ```
 These Job details include an URL for uploading your ID. There is also an expiration time for that URL. Once a Job is 
@@ -119,12 +143,17 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
 
 ```json
 {
-    "download_expires_at": "YYYY-MM-DDTHH:mm:ss.000Z",
-    "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/12345678888888/delivery/...",
-    "id": "12345678888888",
-    "name": "ArchivedTweets_2017_09",
-    "status": "complete"
-}    
+  "created_at": "2021-08-25T00:21:54.000Z",
+  "download_expires_at": "2021-09-01T00:21:54.000Z",
+  "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1430324519596564483/delivery/992443111073660928_1430324519596564483?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=complianceapi-public-svc-acct%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210825%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210825T002154Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=4066eea9ff73d297d5f51ac6f1260540bd8656b473f33e2cc0925afe9c58c8bc66c6c8a501a059ee90bc3c78144c1b32ea774660a3672f33e44c0083f2c9da3ff7fcf6efd8499e158733b81fb9ad9e3f91144d988d903404f5e3718f37719627014fe34b1b4fd7af41ca76393e0a6564cdd03b1cb1aa3d385a639940f9e52f6b5f3d9e5d023a55811bbbed6e5b54e077a2d413a392afd5088b3906ce3d40162f4ca4f62b26e363f70a57ea252594b091e6a50480753f9a528f6bd1c7890883b66b55750220e45fff8aa64067cf08c390517b597d4d80d759c124be5352446e57f9b57dcf3c070bee913cd6140897485a6eabd92157faee46f857f1939931c0f9",
+  "id": "1430324519596564483",
+  "name": "Checking my stored Tweets",
+  "resumable": false,
+  "status": "complete",
+  "type": "tweets",
+  "upload_expires_at": "2021-08-25T00:36:54.000Z",
+  "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1430324519596564483/submission/992443111073660928_1430324519596564483?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=complianceapi-public-svc-acct%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210825%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210825T002154Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=c20ecee2fea6e4ada2cb04f08b3350b039d9a608dd343b9c1ac2a003d2c26e6abac7546a5589bc3146d87b3e9e6023309c96bb9cddf96f8281e2a17fa63fdd8f711a997317c4be6dfead08d728b48381f4d95e515d01b91066aa4eb0c876bcd12195d2521ec2720c8e92d2830ae4ef17340c4fb92c58203f05bef9474d8d91404f48eff41b3b04adb662668eecd14b4ccc848d4d0e7df690a48e5befca081e0ce429a4387ba763a47bec7e88a3a57fdb2b97f7a2a04294aaafe102d9704dce62967e2a85c6c3170c689a8ba8f079afaf63ba850846aadd4ef7a99a7f67e0c05bf65a628809af79251b31051e8a785e262c28b81f2b3aa2839adaf1f5d078e9c2"
+}
 ```
 
 * After the job is 'completed', the results can be downloaded from a cloud file service. 
@@ -154,8 +183,14 @@ Here is an example for a User Compliance event:
 
   ```json
   {
-  }
+  "id": "#######",
+  "action": "delete",
+  "created_at": "2013-03-26T02:46:15+00:00",
+  "reason": "protected"
+}
  ``` 
+
+Other reasons include: "deleted" and "suspended"
 
 
 ## Setting up authentication
@@ -223,12 +258,12 @@ if __name__ == "__main__":
         print(json.dumps(job_details, indent=4, sort_keys=True))
 ```
 There are five scripts:
-  1) **create_job.py** Creating a Job: 
-  2) **list_jobs.py** Requesting a list of all existing Jobs: 
-  3) **list_job.py** Checking on a specific Job status and retrieving its details: 
-  4) **upload_ids.py**Uploading a text file with Tweet IDs (one per line):  
+  1) **create_job.py** Creating a Job: ```python create_job.py --type tweets --name "My new Compliance Job"```
+  2) **list_jobs.py** Requesting a list of all existing Jobs: ```python list_jobs.py --type tweets```
+  3) **list_job.py** Checking on a specific Job status and retrieving its details: ```python list_jobs.py --id <JOB_ID>```
+  4) **upload_ids.py**Uploading a text file with Tweet IDs (one per line): ```python upload_ids.py --ids-file <IDS_FILE> --url <UPLOAD_URL>```
   5) **download_results.py** Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been 
-  deleted):  
+  deleted): ```python download_results.py --id <JOB_ID> --url <DOWNLOAD_URL>```
 
 ## Example client
 ##### ./apps/compliant-client.py
@@ -242,7 +277,6 @@ compliant-client.py
 Usage:
     compliant-client --all --type <type> --name <name> --ids-file <ids-file> --results-file <results-file>
     compliant-client --create --type <job-type> --name <name>
-    #Not sure how to plug in job-type into this 'super' method that does both id and all lists...
     #Client will return both Tweet and User jobs if type is not specified.
     compliant-client --list [--type <type> | --name <name> | --id <id> | --status <status>]
     compliant-client --upload (--name <name> | --id <id>) --ids-file <ids-file>
@@ -273,7 +307,7 @@ Here are some example commands, and illustrate how to manage a Job from creation
 This will create a new Tweets compliance Job, and apply the name "MyTweetsJob." Assigning a name will enable you to 
 manage Jobs by that name instead of its ID. That can be a nice convenience. 
 ```bash
-$python compliant-client.py --create --type tweets --name "MyTweetsJob"
+$python compliant-client.py --create --type tweets --name "Checking my stored Tweets"
 ``` 
 
 This will list the status of all Tweets Jobs.  
@@ -283,22 +317,22 @@ $python compliant-client.py --list --type tweets
 
 You can also look up a Job status by name. 
 ```bash
-$python compliant-client.py --list --name "MyTweetsJob"
+$python compliant-client.py --list --name "Checking my stored Tweets"
 ``` 
 
 This command will upload the Tweet IDs for the Job named "MyTweetsJob".
 ```bash
-$python compliant-client.py --upload --name "MyTweetsJob" --ids-file "./inbox/tweet_ids.txt"
+$python compliant-client.py --upload --type tweets --name "Checking my stored Tweets" --ids-file "./inbox/tweet_ids.txt"
 ``` 
 
 When the Job is finished, this will download the results for the Job named "MyTweetsJob" to the file specified. 
 ```bash
-$python compliant-client.py --download --name "MyTweetsJob" --results-file "./oubox/results.txt"
+$python compliant-client.py --download --type tweets --name "Checking my stored Tweets" --results-file "./oubox/results.txt"
 ``` 
  
-If you want to make a single 'all' call, the script will manage the Job from creation to downloading the results: 
+**If you want to make a single 'all' call**, the script will manage the Job from creation to downloading the results: 
 ```bash
-$pythomcompliant-client.py --all --name "MyTweetsJob" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
+$python compliant-client.py --all --name "Checking my stored Tweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
 ``` 
 
 
@@ -306,7 +340,8 @@ $pythomcompliant-client.py --all --name "MyTweetsJob" --ids-file "../inbox/tweet
 
 ### compliant-client/compliance/compliance.py
 
-The *compliance.py* class lives in a *../compliance folder*. The *../compliance/compliance.py* file defines a **compliance_client** class. 
+The *compliance.py* class lives in a *../compliance folder*. The *../compliance/compliance.py* file defines a 
+**compliance_client** class. 
 
 ```python
 import compliance.compliance
@@ -325,7 +360,8 @@ job_details = compliance_client.list_job(settings['id'])
 
 ### Job details
 
-This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its lifecycle. 
+This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its 
+lifecycle. 
 
 
 ```json
@@ -335,6 +371,7 @@ This code works with a **job_details** object. The compliance endpoint is used t
     "id": "1341535366134689792",
     "name": "80M Tweet test",
     "status": "complete",
+    "type": "tweets",
     "upload_expires_at": "2020-12-23T00:20:30.000Z",
     "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1341535366134689792/submission/..."
 }
@@ -346,7 +383,8 @@ The Python dictionary that encapsulates Job objects looks like:
 
 job_details = {}
 job_details['name']
-job_details['job_id']
+job_details['type']
+job_details['id']
 job_details['upload_url']
 job_details['download_url']
 job_details['status']
@@ -356,119 +394,3 @@ job_details['download_expires_at']
 
 ```
 
-## Example workflow
-
-Create a new job with name "Storm event data". This command:
-
-```
-/compilant-client/apps/compliant-client.py --create --name "Harvey event data"
-```
-
-Outputs:
-```
-New compliance Job created with ID 1347687194924773377
-{
-    "download_expires_at": "2021-01-15T23:30:40.000Z",
-    "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/delivery/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=9fc04d94029432e72b021c71e4f0a66b9897f53ce54b5254421006aaf317c3c154947b819c30df56fe3143cc8b65d19b87a232f22307906a348b58947c6fa3036f7b9f515475a7d63f15db3941c180c3f9f2a7d44e900b929a1343d0633d1c7804893705c9b5e3e55730231b906be2ffed525f54ad3aa66e7e2a655c47d39cc559a36c0bfa6955dfa43f3e946b4ca1e180cca2c0f576756c1a0edfcbead586756841ebcb098691900fd97e932df5109d9f4e8c596eaeefcf784faedf6cd6bbdb42ff3e3aee905d00c36ce588f016cd4e568411e452f29aebc604dc9f51e6335abfca5e0fd545fa47c1f8b1514118e0c2a636e1743ca1dfd8d79218112a9eef2e",
-    "id": "1347687194924773377",
-    "job_id": "1347687194924773377",
-    "name": "Harvey event data",
-    "upload_expires_at": "2021-01-08T23:45:40.000Z",
-    "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/submission/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=1474ab38331b6e600a667e8fa5c9a112bf3e4aa267f34cabb958b87dd3a1b888c711bc1173475a3e0ab1a1980dab9efee7b30d327d9273da1ff6708cf789b590dc7b304d53be0b684ccd926ba2ee04eea86931b974ec790942cf7466231a5170fcdb175e6ee9dac7bbdc01c86ed1e48811fa90b7c22c799a080a3b345e0cdb7b78727aebc6060e396f4761ba364f2162929cfad02b625feda9d4d3488789229f7790ad11c90a02ec19ae0f923f2c652df29d67e65ab6786b22f72ac56cc6a51ed5ee16adc890c8cba2e719f304d9941d6ce91c17103ed609e35c0499268a8ca12478f2f114e4b26cc00980373d339bb8a8cb39bdeb16af6fa948eb19e02383d1"
-}
-
-```
-
-Now, let's list that job and see its status. This command:
-
-```
-/compilant-client/apps/compliant-client.py  --list --id 1347687194924773377
-```
-
-Outputs:
-```
-Making request for Job ID: '1347687194924773377'.
-Job details: 
- {
-    "download_expires_at": "2021-01-15T23:30:40.000Z",
-    "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/delivery/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=9fc04d94029432e72b021c71e4f0a66b9897f53ce54b5254421006aaf317c3c154947b819c30df56fe3143cc8b65d19b87a232f22307906a348b58947c6fa3036f7b9f515475a7d63f15db3941c180c3f9f2a7d44e900b929a1343d0633d1c7804893705c9b5e3e55730231b906be2ffed525f54ad3aa66e7e2a655c47d39cc559a36c0bfa6955dfa43f3e946b4ca1e180cca2c0f576756c1a0edfcbead586756841ebcb098691900fd97e932df5109d9f4e8c596eaeefcf784faedf6cd6bbdb42ff3e3aee905d00c36ce588f016cd4e568411e452f29aebc604dc9f51e6335abfca5e0fd545fa47c1f8b1514118e0c2a636e1743ca1dfd8d79218112a9eef2e",
-    "id": "1347687194924773377",
-    "job_id": "1347687194924773377",
-    "name": "Harvey event data",
-    "status": "created",
-    "upload_expires_at": "2021-01-08T23:45:40.000Z",
-    "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/submission/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=1474ab38331b6e600a667e8fa5c9a112bf3e4aa267f34cabb958b87dd3a1b888c711bc1173475a3e0ab1a1980dab9efee7b30d327d9273da1ff6708cf789b590dc7b304d53be0b684ccd926ba2ee04eea86931b974ec790942cf7466231a5170fcdb175e6ee9dac7bbdc01c86ed1e48811fa90b7c22c799a080a3b345e0cdb7b78727aebc6060e396f4761ba364f2162929cfad02b625feda9d4d3488789229f7790ad11c90a02ec19ae0f923f2c652df29d67e65ab6786b22f72ac56cc6a51ed5ee16adc890c8cba2e719f304d9941d6ce91c17103ed609e35c0499268a8ca12478f2f114e4b26cc00980373d339bb8a8cb39bdeb16af6fa948eb19e02383d1"
-}
-```
-
-We can also look up the Job by name. This command:
-```
-/compilant-client/apps/compliant-client.py  --list --name "Harvey event data" 
-```
-
-Outputs:
-```
-Making request for Jobs list to look up Job with name 'Harvey event data'.
-[
-    {
-        "download_expires_at": "2021-01-15T23:30:40.000Z",
-        "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/delivery/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=9fc04d94029432e72b021c71e4f0a66b9897f53ce54b5254421006aaf317c3c154947b819c30df56fe3143cc8b65d19b87a232f22307906a348b58947c6fa3036f7b9f515475a7d63f15db3941c180c3f9f2a7d44e900b929a1343d0633d1c7804893705c9b5e3e55730231b906be2ffed525f54ad3aa66e7e2a655c47d39cc559a36c0bfa6955dfa43f3e946b4ca1e180cca2c0f576756c1a0edfcbead586756841ebcb098691900fd97e932df5109d9f4e8c596eaeefcf784faedf6cd6bbdb42ff3e3aee905d00c36ce588f016cd4e568411e452f29aebc604dc9f51e6335abfca5e0fd545fa47c1f8b1514118e0c2a636e1743ca1dfd8d79218112a9eef2e",
-        "id": "1347687194924773377",
-        "name": "Harvey event data",
-        "status": "created",
-        "upload_expires_at": "2021-01-08T23:45:40.000Z",
-        "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347687194924773377/submission/16529675_1347687194924773377?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T233040Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=1474ab38331b6e600a667e8fa5c9a112bf3e4aa267f34cabb958b87dd3a1b888c711bc1173475a3e0ab1a1980dab9efee7b30d327d9273da1ff6708cf789b590dc7b304d53be0b684ccd926ba2ee04eea86931b974ec790942cf7466231a5170fcdb175e6ee9dac7bbdc01c86ed1e48811fa90b7c22c799a080a3b345e0cdb7b78727aebc6060e396f4761ba364f2162929cfad02b625feda9d4d3488789229f7790ad11c90a02ec19ae0f923f2c652df29d67e65ab6786b22f72ac56cc6a51ed5ee16adc890c8cba2e719f304d9941d6ce91c17103ed609e35c0499268a8ca12478f2f114e4b26cc00980373d339bb8a8cb39bdeb16af6fa948eb19e02383d1"
-    }
-]
-```
-
-Now let's upload a Tweet ID file. 
-
-
-```
---upload --name "Harvey event data" --ids-file "./inbox/tweet_ids_228000.txt"
-```
-
-```
-Making 'list Jobs' request...
-Successfully uploaded the ./inbox/tweet_ids_228000.txt Tweet ID file.
-```
-
-Recheck the status:
-
-```
---list --name "Storm event data"
-```
-
-```
-Making request for Jobs list to look up Job with name 'Storm event data'.
-[
-    {
-        "download_expires_at": "2021-01-15T23:51:53.000Z",
-        "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347692535167111169/delivery/16529675_1347692535167111169?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T235153Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=b8e2f3afd2ec30145bf32eb8ee468183133e6d41953f00321d980bdf97be91db01ffdea105b675d7419056e49760de490ea4ed9aeff6758d5bee00d9aba4af2afdc42811a93677573ce52f5f509deed0d4292cbb6d69c75dc09c90cfd81030f05dfffb02777f0df17aeeff69be9f241d77d9d02251e4edcd9960a88837338b79ba0d813256fa4cc0d0b6d59a613e2ccef4485bb4d255b8670fdf6f8be015aca55f71644e87e072e1a79581709e023b8a01d4f32b218f0e5941f1dca8ac4e0eeea9fb856d04ce37f21d7cade7e57fef6cb40af812d87866e9d89f427f8ae96d063d8ab17d74786764f1abcfd15785261270e795b1daa62355ef56093665e6d3c6",
-        "id": "1347692535167111169",
-        "name": "Storm event data",
-        "status": "in_progress",
-        "upload_expires_at": "2021-01-09T00:06:53.000Z",
-        "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347692535167111169/submission/16529675_1347692535167111169?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T235153Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=3437a246f8b2ab28f586da6867a90cb8bf8fff5f80318d2a9828e7ca07adfd983712ae2ca83c3cd6abb698da490b1aadb1a67b2626915e2f28987adafd415a99664debaed4ec6fb1e741d2ffaea13e3e761e379d412715333aa9c271073bbfd711530a0c9ebdd4f63a7a1085d98a2388a9b7f305e54acb593ec7648001e84e149d1d0b4f51c2094d6d9ffe722b2024ad521c0a24672cf23d3ecb52033e2aa8162d9670483817f9ae058a8af69791bbae8a15ab54a46ebac63c6a0e57d2416e7864e8cae943291a92c95f160aaf2004580a1a8429378a222c7c77b4f018d0c637d171f88e667d33e92e55d8934c91b96cb4a103dc34bd7223f649f2e555b87b5c"
-    }
-]
-
-```
-
-After a few minutes we recheck, and see that the Job has completed.
-
-```
-Making request for Jobs list to look up Job with name 'Storm event data'.
-[
-    {
-        "download_expires_at": "2021-01-15T23:51:53.000Z",
-        "download_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347692535167111169/delivery/16529675_1347692535167111169?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T235153Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=b8e2f3afd2ec30145bf32eb8ee468183133e6d41953f00321d980bdf97be91db01ffdea105b675d7419056e49760de490ea4ed9aeff6758d5bee00d9aba4af2afdc42811a93677573ce52f5f509deed0d4292cbb6d69c75dc09c90cfd81030f05dfffb02777f0df17aeeff69be9f241d77d9d02251e4edcd9960a88837338b79ba0d813256fa4cc0d0b6d59a613e2ccef4485bb4d255b8670fdf6f8be015aca55f71644e87e072e1a79581709e023b8a01d4f32b218f0e5941f1dca8ac4e0eeea9fb856d04ce37f21d7cade7e57fef6cb40af812d87866e9d89f427f8ae96d063d8ab17d74786764f1abcfd15785261270e795b1daa62355ef56093665e6d3c6",
-        "id": "1347692535167111169",
-        "name": "Storm event data",
-        "status": "complete",
-        "upload_expires_at": "2021-01-09T00:06:53.000Z",
-        "upload_url": "https://storage.googleapis.com/twttr-tweet-compliance/1347692535167111169/submission/16529675_1347692535167111169?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=mesos-svc-account%40twttr-compliance-public-prod.iam.gserviceaccount.com%2F20210108%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210108T235153Z&X-Goog-Expires=900&X-Goog-SignedHeaders=content-type%3Bhost&X-Goog-Signature=3437a246f8b2ab28f586da6867a90cb8bf8fff5f80318d2a9828e7ca07adfd983712ae2ca83c3cd6abb698da490b1aadb1a67b2626915e2f28987adafd415a99664debaed4ec6fb1e741d2ffaea13e3e761e379d412715333aa9c271073bbfd711530a0c9ebdd4f63a7a1085d98a2388a9b7f305e54acb593ec7648001e84e149d1d0b4f51c2094d6d9ffe722b2024ad521c0a24672cf23d3ecb52033e2aa8162d9670483817f9ae058a8af69791bbae8a15ab54a46ebac63c6a0e57d2416e7864e8cae943291a92c95f160aaf2004580a1a8429378a222c7c77b4f018d0c637d171f88e667d33e92e55d8934c91b96cb4a103dc34bd7223f649f2e555b87b5c"
-    }
-]
-``
