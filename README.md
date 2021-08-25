@@ -228,6 +228,14 @@ The Job will remain in the "in_progress" status until it finishes and enters a f
 ```
 
 ## Compliance results objects  
+
+
+Currently, the batch compliance endpoints support the following compliance events:
++ Tweet and User Deletes (a Twitter user deletes a Tweet or their account)
++ Tweet Scrub Geos (a Twitter user removes geo data from their Tweets)
++ Tweet and User Protects (a Twitter user protects their Tweets, ie “goes private”)
++ Tweet and User Suspensions (a Twitter user is suspended, and their Tweets and account are no longer visible on the platform)
+
   
   Here is an example for a Tweet Compliance event:
   
