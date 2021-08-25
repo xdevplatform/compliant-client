@@ -10,6 +10,13 @@ client automates a Compliance Job's life-cycle, from creating a Job to downloadi
 + [Getting Started](#starting)
   + [Python packages](#packages)
   + [Setting up authentication](#auth)  
++ [Compliance Job attributes and lifecycles](#lifecycles)   
+  + [Example ID file](#id-file)
++ [Simple scripts](#simple-details)
++ [Example client](#client-details)
+  + [Example calls](#example-calls)
+  + [Compliance class](#compliance-class)
+  + [Core objects](#core-objects)    
 
 ## Introduction <a id="intro" class="tall">&nbsp;</a>
 
@@ -21,12 +28,16 @@ This repository hosts a set of simple Python scripts (in the ./scripts folder) f
 scripts support a simple command line interface.  
 
 These five scripts map to the fundamental methods that are called on the new Compliance endpoint:
-1) Create a Compliance Job.
-2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events related to them.
-3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed.
-4) Request the status of all "active" Jobs. Only one Job at a time can be running, and uploading an ID file triggers the 
-   start of procoessing. 
-5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which User accounts have updates, or some other Compliance event such as geo-scrubbing. 
+1) Create a Compliance Job: ```create_job.py``` 
+2) Once Job is created, upload a set of Twitter Tweet IDs or User IDs to check for Compliance events 
+   related to them: ```upload_ids.py```
+
+Note: Only one Job at a time can be running, and uploading an ID file triggers the start of procoessing.
+
+3) Request the status of a Job. Determine if a Job was created, whether it is in progress or completed: ```list_job.py```
+4) Request the status of all "active" Jobs: ```list_jobs.py``` 
+5) Once a Job has the status of 'completed', download the results that indicate which Tweets have been deleted, which 
+   User accounts have updates, or some other Compliance event such as geo-scrubbing: ```download_results.py``` 
 
 ### Example client <a id="client" class="tall">&nbsp;</a>
 
@@ -123,8 +134,7 @@ response = requests.get(f"{URL}/{id}", auth=bearer_oauth, headers=headers)
 
 ```
 
-
-## Job attributes and lifecycles 
+## Job attributes and lifecycles <a id="lifecycles" class="tall">&nbsp;</a>
  
 Compliance Jobs have a lifecycle, from being created, having Twitter IDs assigned, a period of time while the results 
 are generated, to having a file to download that contains JSON that describes Compliance events associated with submitted IDs. 
@@ -162,7 +172,7 @@ to be created.
 * Tweet and User IDs are uploaded to a cloud file system. The IDs are written to a simple text file with one ID per line. 
   Below is an example for a set of Tweet IDs, and the format is identical for User Ids. 
 
-#### Tweet ID file 
+#### Tweet ID file <a id="id-file" class="tall">&nbsp;</a>
 
 ```
 900145569397649408
@@ -241,10 +251,7 @@ Here is an example for a User Compliance event:
 Other reasons include: "deleted" and "suspended"
 
 
-
-
-
-## Simple scripts
+## Simple scripts <a id="simple-details" class="tall">&nbsp;</a>
 ##### ./scripts
 
 The /scripts folder contains a set of Python scripts for the compliance endpoints. These scripts can be used to create 
@@ -274,7 +281,7 @@ There are five scripts:
   5) **download_results.py** Downloading results which consist of one JSON object for each Tweet that has had Compliance event (e.g. has been 
   deleted): ```python download_results.py --id <JOB_ID> --url <DOWNLOAD_URL>```
 
-## Example client
+## Example client <a id="client-details" class="tall">&nbsp;</a>
 ##### ./apps/compliant-client.py
 + Command-line app for working with the Twitter API v2 compliance endpoint. 
 
@@ -309,7 +316,7 @@ Options:
     -v --version
 ```    
 
-### Example calls
+### Example calls <a id="example-calls" class="tall">&nbsp;</a>
 
 Here are some example commands, and illustrate how to manage a Job from creation to downloading results.
  
@@ -342,22 +349,21 @@ $python compliant-client.py --download --type tweets --name "Checking my stored 
 **If you want to make a single 'all' call**, the script will manage the Job from creation to downloading the results: 
 ```bash
 $python compliant-client.py --all --name "Checking my stored Tweets" --ids-file "../inbox/tweet_ids.txt" --results-file "../outbox/results.json"
-``` 
+```
 
+### Compliance-client class <a id="compliance-class" class="tall">&nbsp;</a>
 
-## Compliance-client class
-
-### compliant-client/compliance/compliance.py
+#### compliant-client/compliance/compliance.py
 
 The *compliance.py* class lives in a *../compliance folder*. The *../compliance/compliance.py* file defines a 
-**compliance_client** class. 
+**compliance_client** class.
 
 ```python
 import compliance.compliance
 
-compliance_client = compliance.compliance.compliance_client() #Geez, that some odd looking syntax. 
+compliance_client = compliance.compliance.compliance_client()  # Geez, that some odd looking syntax. 
 
-job_details = compliance_client.create_tweet_compliance_job(settings['name'])
+job_details = compliance_client.create_compliance_job(settings['name'])
 results = compliance_client.upload_ids(settings['ids-file'], job_details['upload_url'])
 results = compliance_client.download_results(job_details['download_url'], settings['results-file'])
 current_jobs = compliance_client.list_jobs()
@@ -365,13 +371,17 @@ job_details = compliance_client.list_job(settings['id'])
 
 ```
   
-## Core objects
+### Core objects <a id="core-objects" class="tall">&nbsp;</a>
 
-### Job details
+#### Job details
 
-This code works with a **job_details** object. The compliance endpoint is used to manage a compliance **Job** through its 
-lifecycle. 
+This code works with a **job_details** object. When you call the 'create job' method of the Compliance class, it will return
+a ```job_details``` object with all the attributes you need to manage the Job's lifecycle. 
 
+```python
+job_details = compliance_client.create_compliance_job(type, name)
+```
+The Batch compliance endpoint returns a JSON object with several attributes:
 
 ```json
 {
