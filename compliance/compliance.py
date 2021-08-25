@@ -8,20 +8,10 @@ class compliance_client:
         self.path = '/2/compliance/jobs'
         self.url = f"{self.domain}{self.path}"
 
-        #self.config_file = './config/config.yaml'
         self.headers = {}
-
-        #TODO - Remove
-        self.headers['x-des-apiservices'] = 'staging1'
 
         self.ids_file_path = ""
         self.results_file_path = ""
-
-        #TODO: Getting more fancy? Managing Job list?
-        #self.inbox = './inbox'
-        #self.outbox = './outbox'
-        #self.ids_file_path = f"{Path(__file__).parent}/{self.inbox}/tweet_ids.txt"
-        #self.results_file_path = f"{Path(__file__).parent}/{self.outbox}/results.txt"
 
         #'job_details' is the core Job object and is a Python dictionary. No defaults:
         self.job_details = {}
@@ -49,7 +39,7 @@ class compliance_client:
     def make_results_file_name(id):
         return "results_file_name_root_" + id + ".json"
 
-    def create_tweet_compliance_job(self, type, name):
+    def create_compliance_job(self, type, name):
         """
         curl equivalent: -X POST -H "Authorization: Bearer $BEARER_TOKEN" "https://api.twitter.com/2/tweets/compliance/jobs"
         return job_details dictionary.
@@ -61,7 +51,7 @@ class compliance_client:
         data['type'] = type
         data['name'] = name
 
-        data =  json.dumps(data)
+        data = json.dumps(data)
 
         self.name = name
         response = requests.post(self.url, data = data, auth = self.bearer_oauth, headers=self.headers)
@@ -158,7 +148,8 @@ class compliance_client:
             return success
 
         return success
-   
+
+#This 'main' can be used for unit testing the Compliance class.
 if __name__ == "__main__":
 
     client = compliance_client()
@@ -170,7 +161,7 @@ if __name__ == "__main__":
     #Create Tweet Compliance Job. User Compliance methods coming later.
     name = "Getting my archive compliant. Starting with Tweets..."
     type = 'tweets'
-    job_details = client.create_tweet_compliance_job(type, name)
+    job_details = client.create_compliance_job(type, name)
     
     #job_details['id'] = '12345' #Copy your Job ID here.
 
@@ -186,7 +177,7 @@ if __name__ == "__main__":
     if job_details['status'] == 'complete':
 
         #TODO: Loading an example download URL.
-        #job_details['download_url'] = '' 
+        #job_details['download_url'] = ''
 
         compliance_client.results_file_path = "../outbox/results.json" #TODO: create if needed!
         success = client.download_results(job_details['download_url'], compliance_client.results_file_path)

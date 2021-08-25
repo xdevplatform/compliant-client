@@ -76,8 +76,6 @@ def handle_input(arguments):
         if arguments['--status'] != None:
             settings['status'] = arguments['--status']
 
-        #TODO: Do some checking and see if we have what we need...
-
     if arguments['--upload'] == True:
         settings['mode'] = 'upload'
         settings['type'] = arguments['--type']
@@ -101,7 +99,7 @@ def handle_input(arguments):
     return settings
 
 def is_job_name_unique(type, name):
-    #TODO: check both types and comapre with combined list?
+    #TODO: check both types and compare with combined list?
     job_list = list_jobs(type)
     for job in job_list:
         if job['name'] == name:
@@ -112,7 +110,7 @@ def create_job(type, name):
     job_details = {}
 
     if is_job_name_unique(type, name):
-        job_details = compliance_client.create_tweet_compliance_job(type, name)
+        job_details = compliance_client.create_compliance_job(type, name)
     else:
         print(f"This client script requires that Job names be unique. A Job with name '{name}' already exists.")
 
@@ -159,8 +157,6 @@ def do_all(type, name, ids_file, results_file):
         start = time.time()
         while True:
             job_details = list_job(job_details['id'])
-            #TODO: remove
-            print(job_details['status'])
             if job_details['status'] == 'complete':
                 break
             time.sleep(SLEEP_INTERVAL)
