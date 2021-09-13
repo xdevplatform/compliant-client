@@ -37,7 +37,7 @@ def list_jobs(type):
     headers['User-Agent'] = "BatchCompliancePythonScript"
 
     #Injecting Job type into the request...
-    response = requests.get(f"{URL}?job_type={type}", auth=bearer_oauth, headers=headers)
+    response = requests.get(f"{URL}?type={type}", auth=bearer_oauth, headers=headers)
 
     if response.status_code != 200:
         print(f"Error requesting Job list: {response.status_code} | {response.text}")
